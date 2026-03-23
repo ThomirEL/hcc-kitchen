@@ -248,7 +248,6 @@ public class KitchenHighlightManager : MonoBehaviour
         {
             case HighlightType.Circle:  item.SetCircle(true);  break;
             case HighlightType.Arrow:   item.SetArrow(true);   break;
-            case HighlightType.Outline: item.SetOutline(true); break;
         }
     }
 

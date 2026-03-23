@@ -29,7 +29,6 @@ public class ItemHighlight : MonoBehaviour
     // ── Visuals ───────────────────────────────────────────────────────────
     private GameObject        _ringObj;
     private GameObject        _arrowObj;
-    private SilhouetteOutline _outline;
 
     // ── State ─────────────────────────────────────────────────────────────
     private bool _ringActive    = false;
@@ -50,11 +49,9 @@ public class ItemHighlight : MonoBehaviour
 
         BuildRing();
         BuildArrow();
-        SetupOutline();
 
         _ringObj.SetActive(false);
         _arrowObj.SetActive(false);
-        if (_outline != null) _outline.enabled = false;
     }
 
     private void OnEnable()
@@ -134,16 +131,11 @@ public class ItemHighlight : MonoBehaviour
         }
     }
 
-    public void SetOutline(bool on)
-    {
-        if (_outline != null) _outline.enabled = on;
-    }
 
     public void ClearAll()
     {
         SetCircle(false);
         SetArrow(false);
-        SetOutline(false);
     }
 
     public void SetColour(Color col)
@@ -316,12 +308,7 @@ public class ItemHighlight : MonoBehaviour
     // OUTLINE SETUP
     // ─────────────────────────────────────────────────────────────────────
 
-    private void SetupOutline()
-    {
-        _outline               = gameObject.AddComponent<SilhouetteOutline>();
-        _outline.outlineColour = Color.white;
-        _outline.enabled       = false;
-    }
+  
 
     // ─────────────────────────────────────────────────────────────────────
     // CLEANUP

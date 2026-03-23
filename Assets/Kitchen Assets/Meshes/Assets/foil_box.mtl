@@ -1,0 +1,7 @@
+newmtl mat
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0.05 0.05 0.05
+Ns 10
+illum 2
+map_Kd foil_box_tex.png
