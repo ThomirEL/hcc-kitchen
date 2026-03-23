@@ -1,0 +1,43 @@
+# Unity 6 generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+
+# Unity 6 new cache folders
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*
+!/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*.meta
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/
+
+# APK/build outputs
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Packages — keep manifest and lock, ignore everything else
+/[Pp]ackages/
+!/[Pp]ackages/manifest.json
+!/[Pp]ackages/packages-lock.json
+
+# IDE
+.vs/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Crash reports
+sysinfo.txt
+*.stackdump

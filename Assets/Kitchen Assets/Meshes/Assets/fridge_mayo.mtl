@@ -1,0 +1,4 @@
+newmtl mat
+Kd 1 1 1
+illum 2
+map_Kd fridge_mayo_tex.png
