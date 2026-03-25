@@ -6,6 +6,7 @@ TagManager:
   tags:
   - spice_jar
   - dry_goods_box
+  - can_box
   layers:
   - Default
   - TransparentFX
