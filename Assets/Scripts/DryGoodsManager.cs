@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
@@ -57,34 +58,34 @@ public class DryGoodsManager : MonoBehaviour
                 Directory.CreateDirectory(folderPath);
         }
 
-        // Find all boxes with tag "dry_goods_box"
-        GameObject[] boxes = GameObject.FindGameObjectsWithTag("dry_goods_box");
-        if (boxes.Length == 0)
+        List<DryGoodsDefinition> matchedDryGoods = new List<DryGoodsDefinition>();
+
+        foreach (DryGoodsDefinition dryGood in dryGoods)
         {
-            Debug.LogWarning("[DryGoodsManager] No GameObjects found with tag 'dry_goods_box'");
+            GameObject box = GameObject.Find(dryGood.name) ?? GameObject.Find(dryGood.name + "_Box");
+
+            if (box == null)
+            {
+                Debug.LogWarning($"[DryGoodsManager] Could not find GameObject with name '{dryGood.name}' or '{dryGood.name}_Box'.");
+                continue;
+            }
+
+            if (dryGood.groupIndex >= 0 && dryGood.groupIndex < dryGoodsGroups.Length)
+                dryGood.group = dryGoodsGroups[dryGood.groupIndex];
+
+            dryGood.boxObject = box;
+            dryGood.boxObject.name = dryGood.name + "_Box";
+            matchedDryGoods.Add(dryGood);
+        }
+
+        if (matchedDryGoods.Count == 0)
+        {
+            Debug.LogWarning("[DryGoodsManager] No matching dry goods GameObjects found in scene by definition names.");
             return;
         }
 
-        // Shuffle dry goods
-        DryGoodsDefinition[] shuffledDryGoods = ShuffleDryGoods(dryGoods);
-
-        // Limit to the number of boxes
-        int count = Mathf.Min(boxes.Length, shuffledDryGoods.Length);
-
-        // Assign boxes to dry goods
-        for (int i = 0; i < count; i++)
-        {
-            // Assign group
-            if (shuffledDryGoods[i].groupIndex >= 0 && shuffledDryGoods[i].groupIndex < dryGoodsGroups.Length)
-                shuffledDryGoods[i].group = dryGoodsGroups[shuffledDryGoods[i].groupIndex];
-
-            // Store box GameObject in a temporary non-inspector field
-            shuffledDryGoods[i].boxObject = boxes[i];
-            shuffledDryGoods[i].boxObject.name = shuffledDryGoods[i].name + "_Box"; // rename for clarity
-        }
-
         // Start sequential rendering coroutine
-        StartCoroutine(RenderAllSequential(shuffledDryGoods));
+        StartCoroutine(RenderAllSequential(matchedDryGoods.ToArray()));
     }
 
     private DryGoodsDefinition[] ShuffleDryGoods(DryGoodsDefinition[] array)
@@ -144,6 +145,38 @@ public class DryGoodsManager : MonoBehaviour
         yield return null;
         yield return new WaitForEndOfFrame();
     }
+
+    // Shuffle locations after all textures assigned
+    ShuffleObjectLocations(selection);
+}
+
+private void ShuffleObjectLocations(DryGoodsDefinition[] definitions)
+{
+    var objects = new List<GameObject>();
+    var positions = new List<Vector3>();
+
+    foreach (var def in definitions)
+    {
+        if (def.boxObject != null)
+        {
+            objects.Add(def.boxObject);
+            positions.Add(def.boxObject.transform.position);
+        }
+    }
+
+    if (objects.Count < 2)
+        return;
+
+    for (int i = 0; i < positions.Count; i++)
+    {
+        int rnd = Random.Range(i, positions.Count);
+        Vector3 temp = positions[i];
+        positions[i] = positions[rnd];
+        positions[rnd] = temp;
+    }
+
+    for (int i = 0; i < objects.Count; i++)
+        objects[i].transform.position = positions[i];
 }
 
     private void UpdateCanvasContent(DryGoodsDefinition dryGood)

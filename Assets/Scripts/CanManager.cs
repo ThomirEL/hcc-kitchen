@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
@@ -87,27 +88,33 @@ public class CanManager : MonoBehaviour
                 Directory.CreateDirectory(folderPath);
         }
 
-        GameObject[] cansObjects = GameObject.FindGameObjectsWithTag("can_box");
-        if (cansObjects.Length == 0)
+        List<CanDefinition> matchedCans = new List<CanDefinition>();
+
+        foreach (CanDefinition can in cans)
         {
-            Debug.LogWarning("[CanManager] No GameObjects found with tag 'can_box'");
+            GameObject canObject = GameObject.Find(can.name) ?? GameObject.Find(can.name + "_Can");
+
+            if (canObject == null)
+            {
+                Debug.LogWarning($"[CanManager] Could not find GameObject with name '{can.name}' or '{can.name}_Can'.");
+                continue;
+            }
+
+            if (can.groupIndex >= 0 && can.groupIndex < canGroups.Length)
+                can.group = canGroups[can.groupIndex];
+
+            can.canObject = canObject;
+            can.canObject.name = can.name + "_Can";
+            matchedCans.Add(can);
+        }
+
+        if (matchedCans.Count == 0)
+        {
+            Debug.LogWarning("[CanManager] No matching can GameObjects found in scene by definition names.");
             return;
         }
 
-        CanDefinition[] shuffledCans = ShuffleCans(cans);
-
-        int count = Mathf.Min(cansObjects.Length, shuffledCans.Length);
-
-        for (int i = 0; i < count; i++)
-        {
-            if (shuffledCans[i].groupIndex >= 0 && shuffledCans[i].groupIndex < canGroups.Length)
-                shuffledCans[i].group = canGroups[shuffledCans[i].groupIndex];
-
-            shuffledCans[i].canObject = cansObjects[i];
-            shuffledCans[i].canObject.name = shuffledCans[i].name + "_Can";
-        }
-
-        StartCoroutine(RenderAllCansSequential(shuffledCans));
+        StartCoroutine(RenderAllCansSequential(matchedCans.ToArray()));
     }
 
     private CanDefinition[] ShuffleCans(CanDefinition[] array)
@@ -161,6 +168,38 @@ public class CanManager : MonoBehaviour
             yield return null;
             yield return new WaitForEndOfFrame();
         }
+
+        // After all texture assignments are complete, shuffle object positions in the scene
+        ShuffleObjectLocations(selection);
+    }
+
+    private void ShuffleObjectLocations(CanDefinition[] definitions)
+    {
+        var objects = new List<GameObject>();
+        var positions = new List<Vector3>();
+
+        foreach (var def in definitions)
+        {
+            if (def.canObject != null)
+            {
+                objects.Add(def.canObject);
+                positions.Add(def.canObject.transform.position);
+            }
+        }
+
+        if (objects.Count < 2)
+            return;
+
+        for (int i = 0; i < positions.Count; i++)
+        {
+            int rnd = Random.Range(i, positions.Count);
+            Vector3 temp = positions[i];
+            positions[i] = positions[rnd];
+            positions[rnd] = temp;
+        }
+
+        for (int i = 0; i < objects.Count; i++)
+            objects[i].transform.position = positions[i];
     }
 
     private void UpdateCanvasContent(CanDefinition can)

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
@@ -63,33 +64,33 @@ public class SpiceManager : MonoBehaviour
                 Directory.CreateDirectory(folderPath);
         }
 
-        // Find all jars with tag "spice_jar"
-        GameObject[] jars = GameObject.FindGameObjectsWithTag("spice_jar");
-        if (jars.Length == 0)
+        List<SpiceDefinition> matchedSpices = new List<SpiceDefinition>();
+
+        foreach (SpiceDefinition spice in spices)
         {
-            Debug.LogWarning("[SpiceManager] No GameObjects found with tag 'spice_jar'");
+            GameObject jar = GameObject.Find(spice.name) ?? GameObject.Find(spice.name + "_Jar");
+
+            if (jar == null)
+            {
+                Debug.LogWarning($"[SpiceManager] Could not find GameObject with name '{spice.name}' or '{spice.name}_Jar'.");
+                continue;
+            }
+
+            if (spice.groupIndex >= 0 && spice.groupIndex < spiceGroups.Length)
+                spice.group = spiceGroups[spice.groupIndex];
+
+            spice.jarObject = jar;
+            spice.jarObject.name = spice.name + "_Jar";
+            matchedSpices.Add(spice);
+        }
+
+        if (matchedSpices.Count == 0)
+        {
+            Debug.LogWarning("[SpiceManager] No matching spice GameObjects found in scene by definition names.");
             return;
         }
 
-        // Shuffle spices
-        SpiceDefinition[] shuffledSpices = ShuffleSpices(spices);
-
-        // Limit to the number of jars
-        int count = Mathf.Min(jars.Length, shuffledSpices.Length);
-
-        // Assign jars to spices
-        for (int i = 0; i < count; i++)
-        {
-            // Assign group
-            if (shuffledSpices[i].groupIndex >= 0 && shuffledSpices[i].groupIndex < spiceGroups.Length)
-                shuffledSpices[i].group = spiceGroups[shuffledSpices[i].groupIndex];
-
-            // Store jar GameObject in a temporary non-inspector field
-            shuffledSpices[i].jarObject = jars[i];
-        }
-
-        // Start sequential rendering coroutine
-        StartCoroutine(RenderAllSpicesSequential(shuffledSpices));
+        StartCoroutine(RenderAllSpicesSequential(matchedSpices.ToArray()));
     }
 
     private SpiceDefinition[] ShuffleSpices(SpiceDefinition[] array)
@@ -145,6 +146,38 @@ public class SpiceManager : MonoBehaviour
 
             yield return null; // wait a frame before next spice
         }
+
+        // Shuffle locations after all textures assigned
+        ShuffleObjectLocations(spicesToRender);
+    }
+
+    private void ShuffleObjectLocations(SpiceDefinition[] definitions)
+    {
+        var objects = new List<GameObject>();
+        var positions = new List<Vector3>();
+
+        foreach (var def in definitions)
+        {
+            if (def.jarObject != null)
+            {
+                objects.Add(def.jarObject);
+                positions.Add(def.jarObject.transform.position);
+            }
+        }
+
+        if (objects.Count < 2)
+            return;
+
+        for (int i = 0; i < positions.Count; i++)
+        {
+            int rnd = Random.Range(i, positions.Count);
+            Vector3 temp = positions[i];
+            positions[i] = positions[rnd];
+            positions[rnd] = temp;
+        }
+
+        for (int i = 0; i < objects.Count; i++)
+            objects[i].transform.position = positions[i];
     }
 
     private void UpdateCanvasContent(SpiceDefinition spice)
