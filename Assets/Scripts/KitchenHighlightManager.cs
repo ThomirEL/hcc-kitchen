@@ -142,9 +142,11 @@ public class KitchenHighlightManager : MonoBehaviour
         _collectedItems.Add(item);
 
         // Clear visual highlights then hide the item
-        item.ClearAll();
-        item.gameObject.SetActive(false);
-
+        if (item.disappearOnCollect) {
+            item.ClearAll();
+            item.gameObject.SetActive(false);
+        }
+        
         Debug.Log($"[Highlight] Collected: {item.gameObject.name} " +
                   $"({_collectedItems.Count}/{targets.Count})");
 

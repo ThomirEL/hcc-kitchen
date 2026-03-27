@@ -7,6 +7,8 @@ TagManager:
   - spice_jar
   - dry_goods_box
   - can_box
+  - fridge_item
+  - kitchen_item
   layers:
   - Default
   - TransparentFX
