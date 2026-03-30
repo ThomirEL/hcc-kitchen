@@ -151,6 +151,48 @@ public class KitchenHighlightManager : MonoBehaviour
             if (spiceDefs[i].groupIndex == spiceIndex && spiceDefs[i].jarObject != null)
                 targets.Add(spiceDefs[i].jarObject.GetComponent<ItemHighlight>());
         }
+
+        // Add 4 random fridge items
+        AddRandomTaggedItems("fridge_item", 4);
+        // Add 4 random kitchen items
+        AddRandomTaggedItems("kitchen_item", 4);
+    }
+
+    private void AddRandomTaggedItems(string tag, int count)
+    {
+        GameObject[] allTagged = GameObject.FindGameObjectsWithTag(tag);
+        if (allTagged.Length == 0)
+        {
+            Debug.LogWarning($"[Highlight] No items found with tag '{tag}'.");
+            return;
+        }
+
+        // Shuffle and pick up to count items that have ItemHighlight
+        List<GameObject> shuffled = new List<GameObject>(allTagged);
+        ShuffleList(shuffled);
+
+        int added = 0;
+        foreach (GameObject obj in shuffled)
+        {
+            if (added >= count) break;
+            ItemHighlight ih = obj.GetComponent<ItemHighlight>();
+            if (ih != null && !targets.Contains(ih))
+            {
+                targets.Add(ih);
+                added++;
+            }
+        }
+
+        Debug.Log($"[Highlight] Added {added} random items with tag '{tag}'.");
+    }
+
+    private void ShuffleList<T>(List<T> list)
+    {
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (list[i], list[j]) = (list[j], list[i]);
+        }
     }
     private string ReadPermutations()
     {
@@ -371,7 +413,7 @@ public class KitchenHighlightManager : MonoBehaviour
         }
     }
 
-    private List<ItemHighlight> GetRemainingOrdered()
+    public List<ItemHighlight> GetRemainingOrdered()
     {
         var remaining = new List<ItemHighlight>();
         foreach (var item in _orderedTargets)
