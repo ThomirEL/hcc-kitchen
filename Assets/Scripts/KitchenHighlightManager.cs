@@ -358,12 +358,39 @@ public class KitchenHighlightManager : MonoBehaviour
                     : new List<ItemHighlight>();
 
             case TargetingMode.Subset:
-                int count = Mathf.Min(subsetSize, remaining.Count);
-                return remaining.GetRange(0, count);
+                return GetSubsetTargetsByTag();
 
             default:
                 return new List<ItemHighlight>();
         }
+    }
+
+    /// <summary>
+    /// In subset mode, highlight all remaining targets sharing the tag of the first remaining target
+    /// based on the original targets list order.
+    /// </summary>
+    private List<ItemHighlight> GetSubsetTargetsByTag()
+    {
+        var remainingByTargetList = new List<ItemHighlight>();
+        foreach (var item in targets)
+        {
+            if (item != null && !_collectedItems.Contains(item))
+                remainingByTargetList.Add(item);
+        }
+
+        if (remainingByTargetList.Count == 0)
+            return new List<ItemHighlight>();
+
+        string currentTag = remainingByTargetList[0].gameObject.tag;
+
+        var sameTag = new List<ItemHighlight>();
+        foreach (var item in remainingByTargetList)
+        {
+            if (item != null && item.gameObject.tag == currentTag)
+                sameTag.Add(item);
+        }
+
+        return sameTag;
     }
 
     private void ApplyHighlightType(ItemHighlight item, HighlightType type)
