@@ -11,11 +11,20 @@ using UnityEngine.XR.Interaction.Toolkit;
 ///
 /// Attach to: each kitchen item GameObject
 /// </summary>
+
+[RequireComponent(typeof(UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable))]
+[RequireComponent(typeof(Rigidbody))]
 public class ItemHighlight : MonoBehaviour
 {
+
+    
+    [Header("Does collecting it make it dissapear?")]
+    public bool disappearOnCollect = true;
+
+
     [Header("Appearance")]
     [Tooltip("Colour used for the ring and arrow highlights.")]
-    public Color highlightColour = new Color(0f, 0.85f, 1f, 1f);
+    public Color highlightColour = Color.white;
 
     [Tooltip("Extra padding around bounds for ring radius.")]
     public float boundsPadding = 0.05f;
@@ -45,7 +54,7 @@ public class ItemHighlight : MonoBehaviour
     private void Awake()
     {
         _playerCam = Camera.main != null ? Camera.main.transform : null;
-        _manager   = FindObjectOfType<KitchenHighlightManager>();
+        _manager   = FindAnyObjectByType<KitchenHighlightManager>();
 
         BuildRing();
         BuildArrow();
