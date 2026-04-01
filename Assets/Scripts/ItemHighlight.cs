@@ -55,7 +55,10 @@ public class ItemHighlight : MonoBehaviour
     {
         _playerCam = Camera.main != null ? Camera.main.transform : null;
         _manager   = FindAnyObjectByType<KitchenHighlightManager>();
+    }
 
+    private void Start()
+    {
         BuildRing();
         BuildArrow();
 
@@ -71,7 +74,7 @@ public class ItemHighlight : MonoBehaviour
         if (interactable != null)
         {
             interactable.selectEntered.AddListener(OnGrabbed);
-            Debug.Log($"[ItemHighlight] Hooked grab on: {gameObject.name}");
+            //Debug.Log($"[ItemHighlight] Hooked grab on: {gameObject.name}");
         }
         else
         {
@@ -90,9 +93,10 @@ public class ItemHighlight : MonoBehaviour
 
     private void LateUpdate()
     {
-        // Billboard: ring faces camera every frame
+        // Ring: re-position and billboard every frame in case object moves
         if (_ringActive && _playerCam != null && _ringObj != null)
         {
+            PositionRing();
             Vector3 dir = _ringObj.transform.position - _playerCam.position;
             if (dir.sqrMagnitude > 0.0001f)
                 _ringObj.transform.rotation = Quaternion.LookRotation(dir);
@@ -170,8 +174,25 @@ public class ItemHighlight : MonoBehaviour
     private void BuildRing()
     {
         _ringObj = new GameObject($"{gameObject.name}_Ring");
-        _ringObj.transform.SetParent(transform);
-        _ringObj.transform.localScale = Vector3.one;
+        
+        // Parent to scene root NOT to this transform — avoids inheriting
+        // the item's local scale which causes the ring to be skewed
+        _ringObj.transform.SetParent(null);
+        switch (gameObject.tag)
+        {
+            case "spice_jar":
+                _ringObj.transform.localScale = new Vector3(0.7f,0.7f,0.7f);
+                break;
+            case "can_box":
+                _ringObj.transform.localScale = new Vector3(0.8f,0.8f,0.8f);
+                break;
+            case "dry_goods_box":
+                _ringObj.transform.localScale = new Vector3(0.9f,0.9f,0.9f);
+                break;
+            default:
+                _ringObj.transform.localScale = Vector3.one;
+                break;
+        }
 
         Bounds b = ComputeWorldBounds();
         _ringObj.transform.position = b.center;
@@ -261,6 +282,13 @@ public class ItemHighlight : MonoBehaviour
         mr.receiveShadows    = false;
 
         PositionArrow();
+    }
+
+    private void PositionRing()
+    {
+        if (_ringObj == null) return;
+        Bounds b = ComputeWorldBounds();
+        _ringObj.transform.position = b.center;
     }
 
     private void PositionArrow()

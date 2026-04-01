@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Kitchen.slnx"
+    "dotnet.defaultSolution": "hcc-kitchen.slnx"
 }

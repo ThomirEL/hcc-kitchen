@@ -4,6 +4,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Linq;
 
 [System.Serializable]
 public struct DryGoodsGroup
@@ -48,18 +49,11 @@ public class DryGoodsManager : MonoBehaviour
     public bool savePNGToDisk = false; // toggle saving
     public string pngSaveFolder = "DryGoodsLabels"; // relative to Application.dataPath
 
-    private void Start()
+    private bool _isRenderingSequence = false;
+
+    private void Awake()
     {
-        // Make sure folder exists if saving
-        if (savePNGToDisk)
-        {
-            string folderPath = Path.Combine(Application.dataPath, pngSaveFolder);
-            if (!Directory.Exists(folderPath))
-                Directory.CreateDirectory(folderPath);
-        }
-
-        List<DryGoodsDefinition> matchedDryGoods = new List<DryGoodsDefinition>();
-
+        // Initialize dry goods definitions and find GameObjects BEFORE Start methods run
         foreach (DryGoodsDefinition dryGood in dryGoods)
         {
             GameObject box = GameObject.Find(dryGood.name) ?? GameObject.Find(dryGood.name + "_Box");
@@ -75,6 +69,32 @@ public class DryGoodsManager : MonoBehaviour
 
             dryGood.boxObject = box;
             dryGood.boxObject.name = dryGood.name + "_Box";
+        }
+    }
+
+    private void Start()
+    {
+        // Make sure folder exists if saving
+        if (savePNGToDisk)
+        {
+            string folderPath = Path.Combine(Application.dataPath, pngSaveFolder);
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
+        }
+
+        List<DryGoodsDefinition> matchedDryGoods = new List<DryGoodsDefinition>();
+
+        foreach (DryGoodsDefinition dryGood in dryGoods)
+        {
+            // Skip the base group indicator object - it gets rendered separately
+            if (dryGood.boxObject != null && dryGood.boxObject.name == "Base Dry Good")
+                continue;
+
+            if (dryGood.boxObject == null)
+            {
+                continue;
+            }
+
             matchedDryGoods.Add(dryGood);
         }
 
@@ -101,8 +121,37 @@ public class DryGoodsManager : MonoBehaviour
         return newArray;
     }
 
+    public void InstantiateBasicGroupGameObjects(int groupIndex, int positionIndex)
+    {
+        StartCoroutine(InstantiateWhenRenderingDone(groupIndex, positionIndex));
+    }
+
+    private IEnumerator InstantiateWhenRenderingDone(int groupIndex, int positionIndex)
+    {
+        // Wait until rendering is not happening
+        while (_isRenderingSequence)
+            yield return null;
+
+        // Find all the positions
+        GameObject[] positions = GameObject.FindGameObjectsWithTag("locations").OrderBy(go => go.name).ToArray();
+        // Find first dry good with this group index to get the group name
+        DryGoodsGroup group = dryGoodsGroups[groupIndex];
+        DryGoodsDefinition baseDef = new DryGoodsDefinition { name = "", groupIndex = groupIndex, group = group };
+        baseDef.boxObject = GameObject.Find("Base Dry Good");
+        baseDef.boxObject.transform.position = positions[positionIndex].transform.position;
+        if (baseDef.boxObject == null)
+        {
+        _isRenderingSequence = true;
+
+                Debug.LogWarning($"[DryGoodsManager] Could not find GameObject for group '{group.name}' with expected name '{baseDef.name}' or '{baseDef.name}_Box'.");
+            yield break;
+        }
+
+        StartCoroutine(RenderAllSequential(new DryGoodsDefinition[] { baseDef }));
+    }
+
     private IEnumerator RenderAllSequential(DryGoodsDefinition[] selection)
-{
+    {
     for (int i = 0; i < selection.Length; i++)
     {
         DryGoodsDefinition dryGood = selection[i];
@@ -146,7 +195,9 @@ public class DryGoodsManager : MonoBehaviour
         yield return new WaitForEndOfFrame();
     }
 
-    // Shuffle locations after all textures assigned
+
+    _isRenderingSequence = false;
+        // Shuffle locations after all textures assigned
     ShuffleObjectLocations(selection);
 }
 

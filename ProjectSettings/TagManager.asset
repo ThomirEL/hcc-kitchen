@@ -9,6 +9,7 @@ TagManager:
   - can_box
   - fridge_item
   - kitchen_item
+  - locations
   layers:
   - Default
   - TransparentFX

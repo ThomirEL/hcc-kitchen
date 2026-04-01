@@ -4,6 +4,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Linq;
 
 [System.Serializable]
 public struct SpiceGroup
@@ -54,18 +55,11 @@ public class SpiceManager : MonoBehaviour
     public bool savePNGToDisk = false; // toggle saving
     public string pngSaveFolder = "SpiceLabels"; // relative to Application.dataPath
 
-    private void Start()
+    private bool _isRenderingSequence = false;
+
+    private void Awake()
     {
-        // Make sure folder exists if saving
-        if (savePNGToDisk)
-        {
-            string folderPath = Path.Combine(Application.dataPath, pngSaveFolder);
-            if (!Directory.Exists(folderPath))
-                Directory.CreateDirectory(folderPath);
-        }
-
-        List<SpiceDefinition> matchedSpices = new List<SpiceDefinition>();
-
+        // Initialize spice definitions and find GameObjects BEFORE Start methods run
         foreach (SpiceDefinition spice in spices)
         {
             GameObject jar = GameObject.Find(spice.name) ?? GameObject.Find(spice.name + "_Jar");
@@ -81,6 +75,32 @@ public class SpiceManager : MonoBehaviour
 
             spice.jarObject = jar;
             spice.jarObject.name = spice.name + "_Jar";
+        }
+    }
+
+    private void Start()
+    {
+        // Make sure folder exists if saving
+        if (savePNGToDisk)
+        {
+            string folderPath = Path.Combine(Application.dataPath, pngSaveFolder);
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
+        }
+
+        List<SpiceDefinition> matchedSpices = new List<SpiceDefinition>();
+
+        foreach (SpiceDefinition spice in spices)
+        {
+            // Skip the base group indicator object - it gets rendered separately
+            if (spice.jarObject != null && spice.jarObject.name == "Base Jar")
+                continue;
+
+            if (spice.jarObject == null)
+            {
+                continue;
+            }
+
             matchedSpices.Add(spice);
         }
 
@@ -91,6 +111,33 @@ public class SpiceManager : MonoBehaviour
         }
 
         StartCoroutine(RenderAllSpicesSequential(matchedSpices.ToArray()));
+    }
+
+    public void InstantiateBasicGroupGameObjects(int groupIndex, int positionIndex)
+    {
+        StartCoroutine(InstantiateWhenRenderingDone(groupIndex, positionIndex));
+    }
+
+    private IEnumerator InstantiateWhenRenderingDone(int groupIndex, int positionIndex)
+    {
+        // Wait until rendering is not happening
+        while (_isRenderingSequence)
+            yield return null;
+
+        // Find all the positions
+        GameObject[] positions = GameObject.FindGameObjectsWithTag("locations").OrderBy(go => go.name).ToArray();
+        // Find the spice group at this index to get the group info
+        SpiceGroup group = spiceGroups[groupIndex];
+        SpiceDefinition baseDef = new SpiceDefinition { name = "", groupIndex = groupIndex, group = group };
+        baseDef.jarObject = GameObject.Find("Base Jar");
+        baseDef.jarObject.transform.position = positions[positionIndex].transform.position;
+        if (baseDef.jarObject == null)
+        {
+            Debug.LogWarning($"[SpiceManager] Could not find GameObject for group '{group.name}' with expected name 'Base Jar'.");
+            yield break;
+        }
+
+        StartCoroutine(RenderAllSpicesSequential(new SpiceDefinition[] { baseDef }));
     }
 
     private SpiceDefinition[] ShuffleSpices(SpiceDefinition[] array)
@@ -108,6 +155,8 @@ public class SpiceManager : MonoBehaviour
 
     private IEnumerator RenderAllSpicesSequential(SpiceDefinition[] spicesToRender)
     {
+        _isRenderingSequence = true;
+
         for (int i = 0; i < spicesToRender.Length; i++)
         {
             SpiceDefinition spice = spicesToRender[i];
@@ -149,6 +198,8 @@ public class SpiceManager : MonoBehaviour
 
         // Shuffle locations after all textures assigned
         ShuffleObjectLocations(spicesToRender);
+
+        _isRenderingSequence = false;
     }
 
     private void ShuffleObjectLocations(SpiceDefinition[] definitions)

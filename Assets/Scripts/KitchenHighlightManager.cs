@@ -2,7 +2,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using UnityEditor.UIElements;
-
+using TMPro;
+using System;
+using JetBrains.Annotations;
+using System.Linq;
 
 /// <summary>
 /// Central manager for the kitchen highlighting experiment.
@@ -73,12 +76,18 @@ public class KitchenHighlightManager : MonoBehaviour
     [Header("Tags to include for trials")]
     private string[] tags; // Array of TagField references for validation (optional)
 
+    [SerializeField]
+    private TextMeshProUGUI menuTextFirstPage; // For debugging: formatted string of current targets
+
+    [SerializeField]
+    private TextMeshProUGUI menuTextSecondPage; // For debugging: formatted string of current targets
     // ─────────────────────────────────────────────────────────────────────
     // INTERNAL STATE
     // ─────────────────────────────────────────────────────────────────────
 
     private List<ItemHighlight>    _orderedTargets = new List<ItemHighlight>();
     private HashSet<ItemHighlight> _collectedItems = new HashSet<ItemHighlight>();
+    private List<string[]> _targetGroups = new List<string[]>(); // Store for text updates
 
     // Guards all highlighting — nothing shows until StartTrial() is called
     private bool _trialActive = false;
@@ -134,37 +143,140 @@ public class KitchenHighlightManager : MonoBehaviour
         int dryIndex   = int.Parse(indices[1]);
         int spiceIndex = int.Parse(indices[2]);
 
+        
+
         targets = new List<ItemHighlight>();
-        // Add the selected can, dry good, and spice to the trial targets
+
+        // Collect items from each group
+        List<ItemHighlight> canItems = new List<ItemHighlight>();
+        List<ItemHighlight> dryItems = new List<ItemHighlight>();
+        List<ItemHighlight> spiceItems = new List<ItemHighlight>();
+
         for (int i = 0; i < canDefs.Length; i++)
         {
-            if (canDefs[i].groupIndex == canIndex && canDefs[i].canObject != null)
-                targets.Add(canDefs[i].canObject.GetComponent<ItemHighlight>());
+            if (canDefs[i].groupIndex == canIndex && canDefs[i].canObject != null) {
+                canItems.Add(canDefs[i].canObject.GetComponent<ItemHighlight>());
+  
+                }
         }
         for (int i = 0; i < dryDefs.Length; i++)
         {
             if (dryDefs[i].groupIndex == dryIndex && dryDefs[i].boxObject != null)
-                targets.Add(dryDefs[i].boxObject.GetComponent<ItemHighlight>());
+            {
+                dryItems.Add(dryDefs[i].boxObject.GetComponent<ItemHighlight>());
+       
+            }
         }
         for (int i = 0; i < spiceDefs.Length; i++)
         {
             if (spiceDefs[i].groupIndex == spiceIndex && spiceDefs[i].jarObject != null)
-                targets.Add(spiceDefs[i].jarObject.GetComponent<ItemHighlight>());
+            {
+                spiceItems.Add(spiceDefs[i].jarObject.GetComponent<ItemHighlight>());
+               
+            }
         }
 
-        // Add 4 random fridge items
-        AddRandomTaggedItems("fridge_item", 4);
+         // Add 4 random fridge items
+        List<ItemHighlight> fridgeItems = AddRandomTaggedItems("fridge_item", 4);
         // Add 4 random kitchen items
-        AddRandomTaggedItems("kitchen_item", 4);
+        List<ItemHighlight> kitchenItems = AddRandomTaggedItems("kitchen_item", 4);
+
+        // Randomize the order of the three groups
+        List<List<ItemHighlight>> groupOrder = new List<List<ItemHighlight>> { canItems, dryItems, spiceItems, fridgeItems, kitchenItems };
+        ShuffleList(groupOrder);
+
+        // Find positions of each group after shuffling
+        int canPosition = groupOrder.IndexOf(canItems);
+        int dryPosition = groupOrder.IndexOf(dryItems);
+        int spicePosition = groupOrder.IndexOf(spiceItems);
+
+        // Instantiate basic group indicator objects for each group with their shuffled positions
+        canManager.InstantiateBasicGroupGameObjects(canIndex, canPosition);
+        dryGoodsManager.InstantiateBasicGroupGameObjects(dryIndex, dryPosition);
+        spiceManager.InstantiateBasicGroupGameObjects(spiceIndex, spicePosition);
+
+        // Add items in randomized group order
+        foreach (var group in groupOrder)
+        {
+            targets.AddRange(group);
+        }
+
+        _targetGroups = groupOrder
+    .Select(group => group.Select(item => item.gameObject.name).ToArray())
+    .ToList();
+
+        // Take first 3 groups which are seperated by a completely blank line
+        if (menuTextFirstPage != null)
+        {
+            menuTextFirstPage.text = FormatTargetList(_targetGroups.Take(3).ToList());
+        }
+        if (menuTextSecondPage != null)
+        {
+            menuTextSecondPage.text = FormatTargetList(_targetGroups.Skip(3).Take(2).ToList());
+        }
     }
 
-    private void AddRandomTaggedItems(string tag, int count)
+    private string FormatTargetList(List<string[]> targetGroups)
+    {
+        // Returns a string that is one line per item inside each group, with groups separated by blank lines
+        string result = "";
+        foreach (var group in targetGroups)
+        {
+            foreach (var itemName in group)
+            {
+                result += itemName + "\n";
+            }
+            result += "\n"; // Blank line between groups
+        }
+        return result;
+        
+    }
+
+    private string FormatTargetListWithCollected(List<string[]> targetGroups)
+    {
+        // Returns a string with collected items in green color
+        string result = "";
+        foreach (var group in targetGroups)
+        {
+            foreach (var itemName in group)
+            {
+                // Check if this item has been collected
+                bool isCollected = _collectedItems.Any(item => item.gameObject.name == itemName);
+                if (isCollected)
+                {
+                    result += $"<color=#00FF00>{itemName}</color>\n"; // Green for collected
+                }
+                else
+                {
+                    result += itemName + "\n";
+                }
+            }
+            result += "\n"; // Blank line between groups
+        }
+        return result;
+    }
+
+    private void UpdateTargetTextDisplay()
+    {
+        // Update first page (first 3 groups)
+        if (menuTextFirstPage != null)
+        {
+            menuTextFirstPage.text = FormatTargetListWithCollected(_targetGroups.Take(3).ToList());
+        }
+        // Update second page (last 2 groups)
+        if (menuTextSecondPage != null)
+        {
+            menuTextSecondPage.text = FormatTargetListWithCollected(_targetGroups.Skip(3).Take(2).ToList());
+        }
+    }
+
+    private List<ItemHighlight> AddRandomTaggedItems(string tag, int count)
     {
         GameObject[] allTagged = GameObject.FindGameObjectsWithTag(tag);
         if (allTagged.Length == 0)
         {
             Debug.LogWarning($"[Highlight] No items found with tag '{tag}'.");
-            return;
+            return new List<ItemHighlight>();
         }
 
         // Shuffle and pick up to count items that have ItemHighlight
@@ -172,25 +284,27 @@ public class KitchenHighlightManager : MonoBehaviour
         ShuffleList(shuffled);
 
         int added = 0;
+        List<ItemHighlight> addedItems = new List<ItemHighlight>();
         foreach (GameObject obj in shuffled)
         {
             if (added >= count) break;
             ItemHighlight ih = obj.GetComponent<ItemHighlight>();
             if (ih != null && !targets.Contains(ih))
             {
-                targets.Add(ih);
+                addedItems.Add(ih);
                 added++;
             }
         }
 
-        Debug.Log($"[Highlight] Added {added} random items with tag '{tag}'.");
+        Debug.Log($"[Highlight] Found {added} random items with tag '{tag}'.");
+        return addedItems;
     }
 
     private void ShuffleList<T>(List<T> list)
     {
         for (int i = list.Count - 1; i > 0; i--)
         {
-            int j = Random.Range(0, i + 1);
+            int j = UnityEngine.Random.Range(0, i + 1);
             (list[i], list[j]) = (list[j], list[i]);
         }
     }
@@ -210,7 +324,7 @@ public class KitchenHighlightManager : MonoBehaviour
         List<(int, int, int)> permutations = new List<(int, int, int)>();
         string[] lines = File.ReadAllLines(fullPath);
         Debug.Log($"[Highlight] Loaded permutations.csv with {lines.Length - 1} permutations.");
-        int randomIndex = Random.Range(1, lines.Length); // Skip header line
+        int randomIndex = UnityEngine.Random.Range(1, lines.Length); // Skip header line
         
         return lines[randomIndex];
 
@@ -271,6 +385,9 @@ public class KitchenHighlightManager : MonoBehaviour
         
         Debug.Log($"[Highlight] Collected: {item.gameObject.name} " +
                   $"({_collectedItems.Count}/{targets.Count})");
+
+        // Update text display with collected item in green
+        UpdateTargetTextDisplay();
 
         if (_collectedItems.Count >= targets.Count)
         {
@@ -345,17 +462,21 @@ public class KitchenHighlightManager : MonoBehaviour
 
     private List<ItemHighlight> GetItemsToHighlight()
     {
-        List<ItemHighlight> remaining = GetRemainingOrdered();
-
         switch (targetingMode)
         {
             case TargetingMode.All:
-                return remaining;
+                {
+                    List<ItemHighlight> remaining = GetRemainingOrdered();
+                    return remaining;
+                }
 
             case TargetingMode.Sequential:
-                return remaining.Count > 0
-                    ? new List<ItemHighlight> { remaining[0] }
-                    : new List<ItemHighlight>();
+                {
+                    ItemHighlight nearest = GetNearestRemainingTarget();
+                    return nearest != null
+                        ? new List<ItemHighlight> { nearest }
+                        : new List<ItemHighlight>();
+                }
 
             case TargetingMode.Subset:
                 return GetSubsetTargetsByTag();
@@ -447,6 +568,61 @@ public class KitchenHighlightManager : MonoBehaviour
             if (item != null && !_collectedItems.Contains(item))
                 remaining.Add(item);
         return remaining;
+    }
+
+    /// <summary>
+    /// Finds the single nearest uncollected target from the last collected item's position.
+    /// For the first target, returns the first item in the list.
+    /// Used for Sequential targeting mode.
+    /// </summary>
+    private ItemHighlight GetNearestRemainingTarget()
+    {
+        var remaining = GetRemainingOrdered();
+        if (remaining.Count == 0)
+            return null;
+
+        // If no items collected yet, return the first item in the ordered list
+        if (_collectedItems.Count == 0)
+            return remaining[0];
+
+        // Find the last collected item's position to search from
+        Vector3 searchFromPos = Vector3.zero;
+        bool foundLastCollected = false;
+
+        // Get the position of the most recently collected item
+        // (iterate backwards through _orderedTargets to find the last one that was collected)
+        for (int i = _orderedTargets.Count - 1; i >= 0; i--)
+        {
+            if (_orderedTargets[i] != null && _collectedItems.Contains(_orderedTargets[i]))
+            {
+                searchFromPos = _orderedTargets[i].transform.position;
+                foundLastCollected = true;
+                break;
+            }
+        }
+
+        // If somehow we can't find the last collected item, fall back to first remaining
+        if (!foundLastCollected)
+            return remaining[0];
+
+        // Find nearest uncollected target from the last collected item's position
+        ItemHighlight nearest = null;
+        float nearestDist = float.MaxValue;
+
+        foreach (var item in remaining)
+        {
+            if (item == null)
+                continue;
+
+            float dist = Vector3.Distance(searchFromPos, item.transform.position);
+            if (dist < nearestDist)
+            {
+                nearestDist = dist;
+                nearest = item;
+            }
+        }
+
+        return nearest;
     }
 
     // ─────────────────────────────────────────────────────────────────────

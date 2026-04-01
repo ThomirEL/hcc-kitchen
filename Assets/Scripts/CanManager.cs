@@ -4,6 +4,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Linq;
 
 [System.Serializable]
 public struct CanGroup
@@ -79,17 +80,11 @@ public class CanManager : MonoBehaviour
     public bool savePNGToDisk = false;
     public string pngSaveFolder = "CanLabels";
 
-    private void Start()
+    private bool _isRenderingSequence = false;
+
+    private void Awake()
     {
-        if (savePNGToDisk)
-        {
-            string folderPath = Path.Combine(Application.dataPath, pngSaveFolder);
-            if (!Directory.Exists(folderPath))
-                Directory.CreateDirectory(folderPath);
-        }
-
-        List<CanDefinition> matchedCans = new List<CanDefinition>();
-
+        // Initialize can definitions and find GameObjects BEFORE Start methods run
         foreach (CanDefinition can in cans)
         {
             GameObject canObject = GameObject.Find(can.name) ?? GameObject.Find(can.name + "_Can");
@@ -104,7 +99,31 @@ public class CanManager : MonoBehaviour
                 can.group = canGroups[can.groupIndex];
 
             can.canObject = canObject;
-            can.canObject.name = can.name + "_Can";
+        }
+    }
+
+    private void Start()
+    {
+        if (savePNGToDisk)
+        {
+            string folderPath = Path.Combine(Application.dataPath, pngSaveFolder);
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
+        }
+
+        List<CanDefinition> matchedCans = new List<CanDefinition>();
+
+        foreach (CanDefinition can in cans)
+        {
+            // Skip the base group indicator object - it gets rendered separately
+            if (can.canObject != null && can.canObject.name == "Base Can")
+                continue;
+
+            if (can.canObject == null)
+            {
+                continue;
+            }
+
             matchedCans.Add(can);
         }
 
@@ -115,6 +134,33 @@ public class CanManager : MonoBehaviour
         }
 
         StartCoroutine(RenderAllCansSequential(matchedCans.ToArray()));
+    }
+
+    public void InstantiateBasicGroupGameObjects(int groupIndex, int positionIndex)
+    {
+        StartCoroutine(InstantiateWhenRenderingDone(groupIndex, positionIndex));
+    }
+
+    private IEnumerator InstantiateWhenRenderingDone(int groupIndex, int positionIndex)
+    {
+        // Wait until rendering is not happening
+        while (_isRenderingSequence)
+            yield return null;
+
+        // Find all the positions
+        GameObject[] positions = GameObject.FindGameObjectsWithTag("locations").OrderBy(go => go.name).ToArray();
+        // Find the can group at this index to get the group info
+        CanGroup group = canGroups[groupIndex];
+        CanDefinition baseDef = new CanDefinition { name = "", groupIndex = groupIndex, group = group };
+        baseDef.canObject = GameObject.Find("Base Can");
+        baseDef.canObject.transform.position = positions[positionIndex].transform.position;
+        if (baseDef.canObject == null)
+        {
+            Debug.LogWarning($"[CanManager] Could not find GameObject for group '{group.name}' with expected name 'Base Can'.");
+            yield break;
+        }
+
+        StartCoroutine(RenderAllCansSequential(new CanDefinition[] { baseDef }));
     }
 
     private CanDefinition[] ShuffleCans(CanDefinition[] array)
@@ -132,6 +178,8 @@ public class CanManager : MonoBehaviour
 
     private IEnumerator RenderAllCansSequential(CanDefinition[] selection)
     {
+        _isRenderingSequence = true;
+
         for (int i = 0; i < selection.Length; i++)
         {
             CanDefinition can = selection[i];
@@ -171,6 +219,8 @@ public class CanManager : MonoBehaviour
 
         // After all texture assignments are complete, shuffle object positions in the scene
         ShuffleObjectLocations(selection);
+
+        _isRenderingSequence = false;
     }
 
     private void ShuffleObjectLocations(CanDefinition[] definitions)
