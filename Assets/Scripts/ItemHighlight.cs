@@ -381,9 +381,11 @@ public class ItemHighlight : MonoBehaviour
 
     private Material BuildUnlitMaterial(Color col)
     {
-        Shader   s   = Shader.Find("Universal Render Pipeline/Unlit")
+        Shader   s   = Shader.Find("Custom/OverlayUnlit")
+                    ?? Shader.Find("Universal Render Pipeline/Unlit")
                     ?? Shader.Find("Unlit/Color");
         Material mat = new Material(s) { color = col };
+        
         return mat;
     }
 }

@@ -178,6 +178,7 @@ public class CanManager : MonoBehaviour
 
     private IEnumerator RenderAllCansSequential(CanDefinition[] selection)
     {
+        Debug.Log("[CanManager] RenderAllCansSequential START");
         _isRenderingSequence = true;
 
         for (int i = 0; i < selection.Length; i++)
@@ -218,13 +219,16 @@ public class CanManager : MonoBehaviour
         }
 
         // After all texture assignments are complete, shuffle object positions in the scene
+        Debug.Log("[CanManager] RenderAllCansSequential - About to shuffle");
         ShuffleObjectLocations(selection);
 
         _isRenderingSequence = false;
+        Debug.Log("[CanManager] RenderAllCansSequential END");
     }
 
     private IEnumerator RenderBaseCan(CanDefinition baseCan)
     {
+        Debug.Log("[CanManager] RenderBaseCan START");
         _isRenderingSequence = true;
 
         if (baseCan.canObject == null)
@@ -280,6 +284,7 @@ public class CanManager : MonoBehaviour
         yield return new WaitForEndOfFrame();
 
         _isRenderingSequence = false;
+        Debug.Log("[CanManager] RenderBaseCan END");
     }
 
     private void ShuffleObjectLocations(CanDefinition[] definitions)
@@ -292,12 +297,14 @@ public class CanManager : MonoBehaviour
             if (def.canObject != null)
             {
                 objects.Add(def.canObject);
-                positions.Add(def.canObject.transform.position);
+                positions.Add(def.canObject.transform.localPosition);
             }
         }
 
         if (objects.Count < 2)
             return;
+
+        Debug.Log($"[CanManager] ShuffleObjectLocations: Shuffling {objects.Count} cans - {string.Join(", ", objects.Select(o => o.name))}");
 
         for (int i = 0; i < positions.Count; i++)
         {
@@ -308,7 +315,10 @@ public class CanManager : MonoBehaviour
         }
 
         for (int i = 0; i < objects.Count; i++)
-            objects[i].transform.position = positions[i];
+        {
+            objects[i].transform.localPosition = positions[i];
+            Debug.Log($"[CanManager] Moved {objects[i].name} to local position {positions[i]}");
+        }
     }
 
     private void UpdateCanvasContent(CanDefinition can)

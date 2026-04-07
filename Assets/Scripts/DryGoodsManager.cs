@@ -68,6 +68,7 @@ public class DryGoodsManager : MonoBehaviour
                 dryGood.group = dryGoodsGroups[dryGood.groupIndex];
 
             dryGood.boxObject = box;
+            Debug.Log($"[DryGoodsManager] Awake: Assigned boxObject '{box.name}' (parent: {box.transform.parent?.name ?? "null"}) to definition '{dryGood.name}'");
             //dryGood.boxObject.name = dryGood.name + "_Box";
         }
     }
@@ -121,12 +122,12 @@ public class DryGoodsManager : MonoBehaviour
         return newArray;
     }
 
-    public void InstantiateBasicGroupGameObjects(int groupIndex, UnityEngine.Vector3 worldPosition)
+    public void InstantiateBasicGroupGameObjects(int groupIndex, Vector3 worldPosition)
     {
         StartCoroutine(InstantiateWhenRenderingDone(groupIndex, worldPosition));
     }
 
-    private IEnumerator InstantiateWhenRenderingDone(int groupIndex, UnityEngine.Vector3 worldPosition)
+    private IEnumerator InstantiateWhenRenderingDone(int groupIndex, Vector3 worldPosition)
     {
         // Wait until rendering is not happening
         while (_isRenderingSequence)
@@ -150,6 +151,11 @@ public class DryGoodsManager : MonoBehaviour
 
     private IEnumerator RenderAllSequential(DryGoodsDefinition[] selection)
     {
+        Debug.Log("[DryGoodsManager] RenderAllSequential START - processing " + selection.Length + " items");
+        for (int i = 0; i < selection.Length && i < 3; i++)
+        {
+            Debug.Log($"  Item {i}: {selection[i].name} -> boxObject: {selection[i].boxObject?.name ?? "null"}");
+        }
         _isRenderingSequence = true;
 
         for (int i = 0; i < selection.Length; i++)
@@ -189,13 +195,16 @@ public class DryGoodsManager : MonoBehaviour
             yield return new WaitForEndOfFrame();
         }
 
+        Debug.Log("[DryGoodsManager] RenderAllSequential - About to shuffle");
         ShuffleObjectLocations(selection);
 
         _isRenderingSequence = false;
+        Debug.Log("[DryGoodsManager] RenderAllSequential END");
     }
 
     private IEnumerator RenderBaseDryGood(DryGoodsDefinition baseDryGood)
     {
+        Debug.Log("[DryGoodsManager] RenderBaseDryGood START");
         _isRenderingSequence = true;
 
         if (baseDryGood.boxObject == null)
@@ -251,6 +260,7 @@ public class DryGoodsManager : MonoBehaviour
         yield return new WaitForEndOfFrame();
 
         _isRenderingSequence = false;
+        Debug.Log("[DryGoodsManager] RenderBaseDryGood END");
     }
 
 private void ShuffleObjectLocations(DryGoodsDefinition[] definitions)
@@ -258,17 +268,28 @@ private void ShuffleObjectLocations(DryGoodsDefinition[] definitions)
     var objects = new List<GameObject>();
     var positions = new List<Vector3>();
 
+    Debug.Log($"[DryGoodsManager] ShuffleObjectLocations called with {definitions.Length} definitions");
+    
     foreach (var def in definitions)
     {
         if (def.boxObject != null)
         {
             objects.Add(def.boxObject);
-            positions.Add(def.boxObject.transform.position);
+            positions.Add(def.boxObject.transform.localPosition);
+            Debug.Log($"  Collecting: '{def.boxObject.name}' (parent: {def.boxObject.transform.parent?.name ?? "null"}, y={def.boxObject.transform.localPosition.y}, tag={def.boxObject.tag})");
+            
+            // Safety check: warn if this looks like a Can instead of a dry good box
+            if (def.boxObject.name.Contains("Can") || def.boxObject.name == "Base Can")
+            {
+                Debug.LogError($"[DryGoodsManager] ERROR! Found a Can object in DryGoods shuffle: {def.boxObject.name}!");
+            }
         }
     }
 
     if (objects.Count < 2)
         return;
+
+    Debug.Log($"[DryGoodsManager] ShuffleObjectLocations: Shuffling {objects.Count} dry goods");
 
     for (int i = 0; i < positions.Count; i++)
     {
@@ -279,7 +300,10 @@ private void ShuffleObjectLocations(DryGoodsDefinition[] definitions)
     }
 
     for (int i = 0; i < objects.Count; i++)
-        objects[i].transform.position = positions[i];
+    {
+        objects[i].transform.localPosition = positions[i];
+        Debug.Log($"  [DryGoodsManager] Moved '{objects[i].name}' to local position {positions[i]}");
+    }
 }
 
     private void UpdateCanvasContent(DryGoodsDefinition dryGood)

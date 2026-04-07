@@ -155,6 +155,7 @@ public class SpiceManager : MonoBehaviour
 
     private IEnumerator RenderAllSpicesSequential(SpiceDefinition[] spicesToRender)
     {
+        Debug.Log("[SpiceManager] RenderAllSpicesSequential START");
         _isRenderingSequence = true;
 
         for (int i = 0; i < spicesToRender.Length; i++)
@@ -194,13 +195,16 @@ public class SpiceManager : MonoBehaviour
             yield return new WaitForEndOfFrame();
         }
 
+        Debug.Log("[SpiceManager] RenderAllSpicesSequential - About to shuffle");
         ShuffleObjectLocations(spicesToRender);
 
         _isRenderingSequence = false;
+        Debug.Log("[SpiceManager] RenderAllSpicesSequential END");
     }
 
     private IEnumerator RenderBaseSpice(SpiceDefinition baseSpice)
     {
+        Debug.Log("[SpiceManager] RenderBaseSpice START");
         _isRenderingSequence = true;
 
         if (baseSpice.jarObject == null)
@@ -256,6 +260,7 @@ public class SpiceManager : MonoBehaviour
         yield return new WaitForEndOfFrame();
 
         _isRenderingSequence = false;
+        Debug.Log("[SpiceManager] RenderBaseSpice END");
     }
 
     private void ShuffleObjectLocations(SpiceDefinition[] definitions)
@@ -268,12 +273,14 @@ public class SpiceManager : MonoBehaviour
             if (def.jarObject != null)
             {
                 objects.Add(def.jarObject);
-                positions.Add(def.jarObject.transform.position);
+                positions.Add(def.jarObject.transform.localPosition);
             }
         }
 
         if (objects.Count < 2)
             return;
+
+        Debug.Log($"[SpiceManager] ShuffleObjectLocations: Shuffling {objects.Count} spices - {string.Join(", ", objects.Select(o => o.name))}");
 
         for (int i = 0; i < positions.Count; i++)
         {
@@ -284,7 +291,10 @@ public class SpiceManager : MonoBehaviour
         }
 
         for (int i = 0; i < objects.Count; i++)
-            objects[i].transform.position = positions[i];
+        {
+            objects[i].transform.localPosition = positions[i];
+            Debug.Log($"[SpiceManager] Moved {objects[i].name} to local position {positions[i]}");
+        }
     }
 
     private void UpdateCanvasContent(SpiceDefinition spice)
