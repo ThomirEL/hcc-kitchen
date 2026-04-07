@@ -74,7 +74,7 @@ public class SpiceManager : MonoBehaviour
                 spice.group = spiceGroups[spice.groupIndex];
 
             spice.jarObject = jar;
-            spice.jarObject.name = spice.name + "_Jar";
+            //spice.jarObject.name = spice.name + "_Jar";
         }
     }
 
@@ -113,12 +113,12 @@ public class SpiceManager : MonoBehaviour
         StartCoroutine(RenderAllSpicesSequential(matchedSpices.ToArray()));
     }
 
-    public void InstantiateBasicGroupGameObjects(int groupIndex, int positionIndex)
+    public void InstantiateBasicGroupGameObjects(int groupIndex, Vector3 worldPosition)
     {
-        StartCoroutine(InstantiateWhenRenderingDone(groupIndex, positionIndex));
+        StartCoroutine(InstantiateWhenRenderingDone(groupIndex, worldPosition));
     }
 
-    private IEnumerator InstantiateWhenRenderingDone(int groupIndex, int positionIndex)
+    private IEnumerator InstantiateWhenRenderingDone(int groupIndex, Vector3 worldPosition)
     {
         // Wait until rendering is not happening
         while (_isRenderingSequence)
@@ -130,14 +130,14 @@ public class SpiceManager : MonoBehaviour
         SpiceGroup group = spiceGroups[groupIndex];
         SpiceDefinition baseDef = new SpiceDefinition { name = "", groupIndex = groupIndex, group = group };
         baseDef.jarObject = GameObject.Find("Base Jar");
-        baseDef.jarObject.transform.position = positions[positionIndex].transform.position;
+        baseDef.jarObject.transform.position = worldPosition;
         if (baseDef.jarObject == null)
         {
             Debug.LogWarning($"[SpiceManager] Could not find GameObject for group '{group.name}' with expected name 'Base Jar'.");
             yield break;
         }
 
-        StartCoroutine(RenderAllSpicesSequential(new SpiceDefinition[] { baseDef }));
+        StartCoroutine(RenderBaseSpice(baseDef));
     }
 
     private SpiceDefinition[] ShuffleSpices(SpiceDefinition[] array)
@@ -162,11 +162,8 @@ public class SpiceManager : MonoBehaviour
             SpiceDefinition spice = spicesToRender[i];
             if (spice.jarObject == null) continue;
 
-            // Update canvas
             UpdateCanvasContent(spice);
             Canvas.ForceUpdateCanvases();
-
-            // Wait multiple frames for reliable TMP/render passive update
             yield return null;
             yield return new WaitForEndOfFrame();
             yield return null;
@@ -193,11 +190,70 @@ public class SpiceManager : MonoBehaviour
                 SaveTextureToPNG(spice.runtimeSnapshot, fileName);
             }
 
-            yield return null; // wait a frame before next spice
+            yield return null;
+            yield return new WaitForEndOfFrame();
         }
 
-        // Shuffle locations after all textures assigned
         ShuffleObjectLocations(spicesToRender);
+
+        _isRenderingSequence = false;
+    }
+
+    private IEnumerator RenderBaseSpice(SpiceDefinition baseSpice)
+    {
+        _isRenderingSequence = true;
+
+        if (baseSpice.jarObject == null)
+        {
+            Debug.LogError("[SpiceManager] Base spice object is null");
+            _isRenderingSequence = false;
+            yield break;
+        }
+
+        UpdateCanvasContent(baseSpice);
+        Canvas.ForceUpdateCanvases();
+        yield return null;
+        yield return new WaitForEndOfFrame();
+        yield return null;
+
+        var spriteRenderer = baseSpice.jarObject.GetComponentInChildren<SpriteRenderer>();
+        if (spriteRenderer == null)
+        {
+            Debug.LogWarning($"Base spice {baseSpice.jarObject.name} has no SpriteRenderer");
+            _isRenderingSequence = false;
+            yield break;
+        }
+
+        RenderTexture rt = new RenderTexture(renderTextureWidth, renderTextureHeight, 16);
+        rt.Create();
+
+        RenderToTexture(rt, null);
+
+        baseSpice.runtimeSnapshot = CaptureRenderTexture(rt);
+        rt.Release();
+
+        if (baseSpice.runtimeSnapshot != null)
+        {
+            Sprite sprite = Sprite.Create(
+                baseSpice.runtimeSnapshot,
+                new Rect(0, 0, baseSpice.runtimeSnapshot.width, baseSpice.runtimeSnapshot.height),
+                new Vector2(0.5f, 0.5f)
+            );
+
+            if (sprite != null)
+            {
+                spriteRenderer.sprite = sprite;
+            }
+        }
+
+        if (savePNGToDisk)
+        {
+            string fileName = baseSpice.name.Replace(" ", "_") + "_Base.png";
+            SaveTextureToPNG(baseSpice.runtimeSnapshot, fileName);
+        }
+
+        yield return null;
+        yield return new WaitForEndOfFrame();
 
         _isRenderingSequence = false;
     }
@@ -256,9 +312,9 @@ public class SpiceManager : MonoBehaviour
 
     private void RenderToTexture(RenderTexture targetRT, Material jarMaterial)
     {
-        if (labelCamera == null || targetRT == null || jarMaterial == null)
+        if (labelCamera == null || targetRT == null)
         {
-            Debug.LogError("[SpiceManager] Missing reference — cannot render.");
+            Debug.LogError("[SpiceManager] Missing references — cannot render.");
             return;
         }
 
@@ -274,7 +330,10 @@ public class SpiceManager : MonoBehaviour
         labelCamera.targetTexture = prevTarget;
         RenderTexture.active = prevActive;
 
-        jarMaterial.SetTexture("_BaseMap", targetRT);
+        if (jarMaterial != null)
+        {
+            jarMaterial.SetTexture("_BaseMap", targetRT);
+        }
     }
 
     public static Texture2D CaptureRenderTexture(RenderTexture rt)

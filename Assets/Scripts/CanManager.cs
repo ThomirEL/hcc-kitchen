@@ -136,12 +136,12 @@ public class CanManager : MonoBehaviour
         StartCoroutine(RenderAllCansSequential(matchedCans.ToArray()));
     }
 
-    public void InstantiateBasicGroupGameObjects(int groupIndex, int positionIndex)
+    public void InstantiateBasicGroupGameObjects(int groupIndex, Vector3 worldPosition)
     {
-        StartCoroutine(InstantiateWhenRenderingDone(groupIndex, positionIndex));
+        StartCoroutine(InstantiateWhenRenderingDone(groupIndex, worldPosition));
     }
 
-    private IEnumerator InstantiateWhenRenderingDone(int groupIndex, int positionIndex)
+    private IEnumerator InstantiateWhenRenderingDone(int groupIndex, Vector3 worldPosition)
     {
         // Wait until rendering is not happening
         while (_isRenderingSequence)
@@ -153,14 +153,14 @@ public class CanManager : MonoBehaviour
         CanGroup group = canGroups[groupIndex];
         CanDefinition baseDef = new CanDefinition { name = "", groupIndex = groupIndex, group = group };
         baseDef.canObject = GameObject.Find("Base Can");
-        baseDef.canObject.transform.position = positions[positionIndex].transform.position;
+        baseDef.canObject.transform.position = worldPosition;
         if (baseDef.canObject == null)
         {
             Debug.LogWarning($"[CanManager] Could not find GameObject for group '{group.name}' with expected name 'Base Can'.");
             yield break;
         }
 
-        StartCoroutine(RenderAllCansSequential(new CanDefinition[] { baseDef }));
+        StartCoroutine(RenderBaseCan(baseDef));
     }
 
     private CanDefinition[] ShuffleCans(CanDefinition[] array)
@@ -223,6 +223,65 @@ public class CanManager : MonoBehaviour
         _isRenderingSequence = false;
     }
 
+    private IEnumerator RenderBaseCan(CanDefinition baseCan)
+    {
+        _isRenderingSequence = true;
+
+        if (baseCan.canObject == null)
+        {
+            Debug.LogError("[CanManager] Base can object is null");
+            _isRenderingSequence = false;
+            yield break;
+        }
+
+        UpdateCanvasContent(baseCan);
+        Canvas.ForceUpdateCanvases();
+        yield return null;
+        yield return new WaitForEndOfFrame();
+        yield return null;
+
+        var spriteRenderer = baseCan.canObject.GetComponentInChildren<SpriteRenderer>();
+        if (spriteRenderer == null)
+        {
+            Debug.LogWarning($"Base can {baseCan.canObject.name} has no SpriteRenderer");
+            _isRenderingSequence = false;
+            yield break;
+        }
+
+        RenderTexture rt = new RenderTexture(renderTextureWidth, renderTextureHeight, 16);
+        rt.Create();
+
+        RenderToTexture(rt, null);
+
+        baseCan.runtimeSnapshot = CaptureRenderTexture(rt);
+        rt.Release();
+
+        if (baseCan.runtimeSnapshot != null)
+        {
+            Sprite sprite = Sprite.Create(
+                baseCan.runtimeSnapshot,
+                new Rect(0, 0, baseCan.runtimeSnapshot.width, baseCan.runtimeSnapshot.height),
+                new Vector2(0.5f, 0.5f)
+            );
+
+            if (sprite != null)
+            {
+                spriteRenderer.sprite = sprite;
+            }
+        }
+
+        if (savePNGToDisk)
+        {
+            string fileName = baseCan.name.Replace(" ", "_") + "_Base.png";
+            SaveTextureToPNG(baseCan.runtimeSnapshot, fileName);
+        }
+
+        yield return null;
+        yield return new WaitForEndOfFrame();
+
+        _isRenderingSequence = false;
+    }
+
     private void ShuffleObjectLocations(CanDefinition[] definitions)
     {
         var objects = new List<GameObject>();
@@ -271,9 +330,9 @@ public class CanManager : MonoBehaviour
 
     private void RenderToTexture(RenderTexture targetRT, Material canMaterial)
     {
-        if (labelCamera == null || targetRT == null || canMaterial == null)
+        if (labelCamera == null || targetRT == null)
         {
-            Debug.LogError("[CanManager] Missing reference — cannot render.");
+            Debug.LogError("[CanManager] Missing references — cannot render.");
             return;
         }
 
@@ -289,7 +348,10 @@ public class CanManager : MonoBehaviour
         labelCamera.targetTexture = prevTarget;
         RenderTexture.active = prevActive;
 
-        canMaterial.SetTexture("_BaseMap", targetRT);
+        if (canMaterial != null)
+        {
+            canMaterial.SetTexture("_BaseMap", targetRT);
+        }
     }
 
     public static Texture2D CaptureRenderTexture(RenderTexture rt)

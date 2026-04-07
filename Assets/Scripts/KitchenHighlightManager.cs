@@ -190,10 +190,7 @@ public class KitchenHighlightManager : MonoBehaviour
         int dryPosition = groupOrder.IndexOf(dryItems);
         int spicePosition = groupOrder.IndexOf(spiceItems);
 
-        // Instantiate basic group indicator objects for each group with their shuffled positions
-        canManager.InstantiateBasicGroupGameObjects(canIndex, canPosition);
-        dryGoodsManager.InstantiateBasicGroupGameObjects(dryIndex, dryPosition);
-        spiceManager.InstantiateBasicGroupGameObjects(spiceIndex, spicePosition);
+        
 
         // Add items in randomized group order
         foreach (var group in groupOrder)
@@ -214,7 +211,94 @@ public class KitchenHighlightManager : MonoBehaviour
         {
             menuTextSecondPage.text = FormatTargetList(_targetGroups.Skip(3).Take(2).ToList());
         }
+
+        // Decide which TMP holds which group
+        Vector3 GetWorldPosForGroup(int groupIndex)
+        {
+            if (groupIndex < 3)
+                return GetGroupCenterFromTMP(menuTextFirstPage, groupIndex);
+            else
+                return GetGroupCenterFromTMP(menuTextSecondPage, groupIndex - 3);
+        }
+
+        Vector3 canPos   = GetWorldPosForGroup(canPosition);
+        Vector3 dryPos   = GetWorldPosForGroup(dryPosition);
+        Vector3 spicePos = GetWorldPosForGroup(spicePosition);
+
+        canManager.InstantiateBasicGroupGameObjects(canIndex, canPos);
+        dryGoodsManager.InstantiateBasicGroupGameObjects(dryIndex, dryPos);
+        spiceManager.InstantiateBasicGroupGameObjects(spiceIndex, spicePos);
     }
+
+    private Vector3 GetGroupCenterFromTMP(TextMeshProUGUI tmp, int groupIndex)
+{
+    tmp.ForceMeshUpdate();
+    TMP_TextInfo textInfo = tmp.textInfo;
+
+    List<(int start, int end)> groups = new List<(int, int)>();
+
+    int currentStart = -1;
+
+    // Build groups based on empty lines
+    for (int i = 0; i < textInfo.lineCount; i++)
+    {
+        TMP_LineInfo line = textInfo.lineInfo[i];
+
+        string lineText = tmp.text.Substring(
+            line.firstCharacterIndex,
+            line.characterCount
+        ).Trim();
+
+        if (string.IsNullOrEmpty(lineText))
+        {
+            if (currentStart != -1)
+            {
+                groups.Add((currentStart, i - 1));
+                currentStart = -1;
+            }
+        }
+        else
+        {
+            if (currentStart == -1)
+                currentStart = i;
+        }
+    }
+
+    if (currentStart != -1)
+        groups.Add((currentStart, textInfo.lineCount - 1));
+
+    if (groupIndex >= groups.Count)
+    {
+        Debug.LogWarning($"TMP group index {groupIndex} out of range.");
+        return tmp.transform.position;
+    }
+
+    var (startLine, endLine) = groups[groupIndex];
+
+    Vector3 min = Vector3.positiveInfinity;
+    Vector3 max = Vector3.negativeInfinity;
+
+    for (int i = startLine; i <= endLine; i++)
+    {
+        TMP_LineInfo line = textInfo.lineInfo[i];
+
+        for (int j = line.firstCharacterIndex; j <= line.lastCharacterIndex; j++)
+        {
+            if (!textInfo.characterInfo[j].isVisible) continue;
+
+            var charInfo = textInfo.characterInfo[j];
+
+            min = Vector3.Min(min, charInfo.bottomLeft);
+            max = Vector3.Max(max, charInfo.topRight);
+        }
+    }
+
+    Vector3 localCenter = (min + max) / 2f;
+    // Push to the right
+    localCenter += new Vector3(0.3f, 0f, 0.2f);
+
+    return tmp.transform.TransformPoint(localCenter);
+}
 
     private string FormatTargetList(List<string[]> targetGroups)
     {

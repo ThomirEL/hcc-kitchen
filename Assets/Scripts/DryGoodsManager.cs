@@ -68,7 +68,7 @@ public class DryGoodsManager : MonoBehaviour
                 dryGood.group = dryGoodsGroups[dryGood.groupIndex];
 
             dryGood.boxObject = box;
-            dryGood.boxObject.name = dryGood.name + "_Box";
+            //dryGood.boxObject.name = dryGood.name + "_Box";
         }
     }
 
@@ -121,12 +121,12 @@ public class DryGoodsManager : MonoBehaviour
         return newArray;
     }
 
-    public void InstantiateBasicGroupGameObjects(int groupIndex, int positionIndex)
+    public void InstantiateBasicGroupGameObjects(int groupIndex, UnityEngine.Vector3 worldPosition)
     {
-        StartCoroutine(InstantiateWhenRenderingDone(groupIndex, positionIndex));
+        StartCoroutine(InstantiateWhenRenderingDone(groupIndex, worldPosition));
     }
 
-    private IEnumerator InstantiateWhenRenderingDone(int groupIndex, int positionIndex)
+    private IEnumerator InstantiateWhenRenderingDone(int groupIndex, UnityEngine.Vector3 worldPosition)
     {
         // Wait until rendering is not happening
         while (_isRenderingSequence)
@@ -138,68 +138,120 @@ public class DryGoodsManager : MonoBehaviour
         DryGoodsGroup group = dryGoodsGroups[groupIndex];
         DryGoodsDefinition baseDef = new DryGoodsDefinition { name = "", groupIndex = groupIndex, group = group };
         baseDef.boxObject = GameObject.Find("Base Dry Good");
-        baseDef.boxObject.transform.position = positions[positionIndex].transform.position;
+        baseDef.boxObject.transform.position = worldPosition;
         if (baseDef.boxObject == null)
         {
-        _isRenderingSequence = true;
-
-                Debug.LogWarning($"[DryGoodsManager] Could not find GameObject for group '{group.name}' with expected name '{baseDef.name}' or '{baseDef.name}_Box'.");
+            Debug.LogWarning($"[DryGoodsManager] Could not find GameObject for group '{group.name}' with expected name 'Base Dry Good'.");
             yield break;
         }
 
-        StartCoroutine(RenderAllSequential(new DryGoodsDefinition[] { baseDef }));
+        StartCoroutine(RenderBaseDryGood(baseDef));
     }
 
     private IEnumerator RenderAllSequential(DryGoodsDefinition[] selection)
     {
-    for (int i = 0; i < selection.Length; i++)
+        _isRenderingSequence = true;
+
+        for (int i = 0; i < selection.Length; i++)
+        {
+            DryGoodsDefinition dryGood = selection[i];
+            if (dryGood.boxObject == null) continue;
+
+            UpdateCanvasContent(dryGood);
+            Canvas.ForceUpdateCanvases();
+            yield return null;
+            yield return new WaitForEndOfFrame();
+            yield return null;
+
+            var renderer = dryGood.boxObject.GetComponent<MeshRenderer>();
+            if (renderer == null)
+            {
+                Debug.LogWarning($"Box {dryGood.boxObject.name} has no MeshRenderer");
+                continue;
+            }
+
+            renderer.material = new Material(renderer.material);
+
+            RenderTexture rt = new RenderTexture(renderTextureWidth, renderTextureHeight, 16);
+            rt.Create();
+
+            RenderToTexture(rt, renderer.material);
+
+            dryGood.runtimeSnapshot = CaptureRenderTexture(rt);
+
+            if (savePNGToDisk)
+            {
+                string fileName = dryGood.name.Replace(" ", "_") + ".png";
+                SaveTextureToPNG(dryGood.runtimeSnapshot, fileName);
+            }
+
+            yield return null;
+            yield return new WaitForEndOfFrame();
+        }
+
+        ShuffleObjectLocations(selection);
+
+        _isRenderingSequence = false;
+    }
+
+    private IEnumerator RenderBaseDryGood(DryGoodsDefinition baseDryGood)
     {
-        DryGoodsDefinition dryGood = selection[i];
-        if (dryGood.boxObject == null) continue;
+        _isRenderingSequence = true;
 
-        // STEP 1: Update UI for this dryGood
-        UpdateCanvasContent(dryGood);
+        if (baseDryGood.boxObject == null)
+        {
+            Debug.LogError("[DryGoodsManager] Base dry good object is null");
+            _isRenderingSequence = false;
+            yield break;
+        }
 
-        // Force canvas rebuild and wait 1-2 frames to guarantee TMP update finished
+        UpdateCanvasContent(baseDryGood);
         Canvas.ForceUpdateCanvases();
         yield return null;
         yield return new WaitForEndOfFrame();
         yield return null;
 
-        var renderer = dryGood.boxObject.GetComponent<MeshRenderer>();
-        if (renderer == null)
+        var spriteRenderer = baseDryGood.boxObject.GetComponentInChildren<SpriteRenderer>();
+        if (spriteRenderer == null)
         {
-            Debug.LogWarning($"Box {dryGood.boxObject.name} has no MeshRenderer");
-            continue;
+            Debug.LogWarning($"Base dry good {baseDryGood.boxObject.name} has no SpriteRenderer");
+            _isRenderingSequence = false;
+            yield break;
         }
-
-        renderer.material = new Material(renderer.material);
 
         RenderTexture rt = new RenderTexture(renderTextureWidth, renderTextureHeight, 16);
         rt.Create();
 
-        // STEP 3: Render AFTER UI is stable
-        RenderToTexture(rt, renderer.material);
+        RenderToTexture(rt, null);
 
-        // STEP 4: Capture
-        dryGood.runtimeSnapshot = CaptureRenderTexture(rt);
+        baseDryGood.runtimeSnapshot = CaptureRenderTexture(rt);
+        rt.Release();
+
+        if (baseDryGood.runtimeSnapshot != null)
+        {
+            Sprite sprite = Sprite.Create(
+                baseDryGood.runtimeSnapshot,
+                new Rect(0, 0, baseDryGood.runtimeSnapshot.width, baseDryGood.runtimeSnapshot.height),
+                new Vector2(0.5f, 0.5f)
+            );
+
+            if (sprite != null)
+            {
+                spriteRenderer.sprite = sprite;
+            }
+        }
 
         if (savePNGToDisk)
         {
-            string fileName = dryGood.name.Replace(" ", "_") + ".png";
-            SaveTextureToPNG(dryGood.runtimeSnapshot, fileName);
+            string fileName = baseDryGood.name.Replace(" ", "_") + "_Base.png";
+            SaveTextureToPNG(baseDryGood.runtimeSnapshot, fileName);
         }
 
-        // 🚨 CRITICAL: Wait before next item
         yield return null;
         yield return new WaitForEndOfFrame();
+
+        _isRenderingSequence = false;
     }
-
-
-    _isRenderingSequence = false;
-        // Shuffle locations after all textures assigned
-    ShuffleObjectLocations(selection);
-}
 
 private void ShuffleObjectLocations(DryGoodsDefinition[] definitions)
 {
@@ -249,9 +301,9 @@ private void ShuffleObjectLocations(DryGoodsDefinition[] definitions)
 
     private void RenderToTexture(RenderTexture targetRT, Material boxMaterial)
     {
-        if (labelCamera == null || targetRT == null || boxMaterial == null)
+        if (labelCamera == null || targetRT == null)
         {
-            Debug.LogError("[DryGoodsManager] Missing reference — cannot render.");
+            Debug.LogError("[DryGoodsManager] Missing references — cannot render.");
             return;
         }
 
@@ -264,11 +316,13 @@ private void ShuffleObjectLocations(DryGoodsDefinition[] definitions)
         labelCamera.targetTexture = targetRT;
         labelCamera.Render();
 
-        // restore render targets to avoid leaking target assignment to later frames
         labelCamera.targetTexture = prevTarget;
         RenderTexture.active = prevActive;
 
-        boxMaterial.SetTexture("_BaseMap", targetRT);
+        if (boxMaterial != null)
+        {
+            boxMaterial.SetTexture("_BaseMap", targetRT);
+        }
     }
 
     public static Texture2D CaptureRenderTexture(RenderTexture rt)
