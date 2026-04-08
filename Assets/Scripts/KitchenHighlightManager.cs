@@ -388,7 +388,7 @@ public class KitchenHighlightManager : MonoBehaviour
     private string ReadPermutations(int permutationIndex = -1)
     {
         // Get permutations.csv file
-        string path = Path.Combine(Application.dataPath, "Experiment Data");
+        string path = Path.Combine(Application.persistentDataPath, "Experiment Data");
         string fullPath = Path.Combine(path, "permutations.csv");
         if (!File.Exists(fullPath))
         {

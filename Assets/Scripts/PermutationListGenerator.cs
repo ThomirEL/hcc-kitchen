@@ -30,7 +30,7 @@ public class PermutationListGenerator : MonoBehaviour
         }
 
         // Create Experiment Data folder if it doesn't exist
-        string experimentDataPath = Path.Combine(Application.dataPath, "Experiment Data");
+        string experimentDataPath = Path.Combine(Application.persistentDataPath, "Experiment Data");
         if (!Directory.Exists(experimentDataPath))
         {
             Directory.CreateDirectory(experimentDataPath);
