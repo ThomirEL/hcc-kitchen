@@ -714,7 +714,7 @@ public class KitchenHighlightManager : MonoBehaviour
 
     private void ClearAllHighlights()
     {
-        foreach (var t in targets)
+        foreach (var t in UnityEngine.Object.FindObjectsByType<ItemHighlight>(FindObjectsSortMode.None))
             if (t != null) t.ClearAll();
     }
 

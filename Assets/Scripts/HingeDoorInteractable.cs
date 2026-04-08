@@ -73,14 +73,14 @@ public class HingeDoorInteractable : MonoBehaviour
         _grabStartHandAngle = GetHandAngle();
         _grabStartDoorAngle = _currentAngle;
 
-        Debug.Log($"[HingeDoor] Grabbed. Hand angle baseline: {_grabStartHandAngle:F1}°, Door baseline: {_grabStartDoorAngle:F1}°");
+        //Debug.Log($"[HingeDoor] Grabbed. Hand angle baseline: {_grabStartHandAngle:F1}°, Door baseline: {_grabStartDoorAngle:F1}°");
     }
 
     private void OnRelease(SelectExitEventArgs args)
     {
         _isGrabbed = false;
         _activeInteractor = null;
-        Debug.Log($"[HingeDoor] Released at angle: {_currentAngle:F1}°");
+        //Debug.Log($"[HingeDoor] Released at angle: {_currentAngle:F1}°");
     }
 
     private void Update()
