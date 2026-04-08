@@ -32,6 +32,8 @@ public class SpiceDefinition
 
 public class SpiceManager : MonoBehaviour
 {
+    public static SpiceManager Instance { get; private set; }
+
     [Header("References")]
     public Camera labelCamera;
     public Image backgroundImage;
@@ -59,6 +61,13 @@ public class SpiceManager : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
         // Initialize spice definitions and find GameObjects BEFORE Start methods run
         foreach (SpiceDefinition spice in spices)
         {
@@ -111,6 +120,33 @@ public class SpiceManager : MonoBehaviour
         }
 
         StartCoroutine(RenderAllSpicesSequential(matchedSpices.ToArray()));
+    }
+
+    /// <summary>Renders only the base spice for the current trial (2D sprite).</summary>
+    public void RenderBaseCans()
+    {
+        SpiceDefinition baseDef = new SpiceDefinition { name = "", groupIndex = -1 };
+        baseDef.jarObject = GameObject.Find("Base Jar");
+        
+        if (baseDef.jarObject == null)
+        {
+            Debug.LogWarning("[SpiceManager] Base Jar not found in scene.");
+            return;
+        }
+
+        // Try to determine the group from nearby definitions
+        foreach (SpiceDefinition spice in spices)
+        {
+            if (spice.jarObject != null && spice.jarObject.name == "Base Jar")
+            {
+                baseDef.groupIndex = spice.groupIndex;
+                if (baseDef.groupIndex >= 0 && baseDef.groupIndex < spiceGroups.Length)
+                    baseDef.group = spiceGroups[baseDef.groupIndex];
+                break;
+            }
+        }
+
+        StartCoroutine(RenderBaseSpice(baseDef));
     }
 
     public void InstantiateBasicGroupGameObjects(int groupIndex, Vector3 worldPosition)
@@ -199,12 +235,12 @@ public class SpiceManager : MonoBehaviour
         ShuffleObjectLocations(spicesToRender);
 
         _isRenderingSequence = false;
-        Debug.Log("[SpiceManager] RenderAllSpicesSequential END");
+        //Debug.Log("[SpiceManager] RenderAllSpicesSequential END");
     }
 
     private IEnumerator RenderBaseSpice(SpiceDefinition baseSpice)
     {
-        Debug.Log("[SpiceManager] RenderBaseSpice START");
+        //Debug.Log("[SpiceManager] RenderBaseSpice START");
         _isRenderingSequence = true;
 
         if (baseSpice.jarObject == null)
@@ -260,7 +296,7 @@ public class SpiceManager : MonoBehaviour
         yield return new WaitForEndOfFrame();
 
         _isRenderingSequence = false;
-        Debug.Log("[SpiceManager] RenderBaseSpice END");
+        //Debug.Log("[SpiceManager] RenderBaseSpice END");
     }
 
     private void ShuffleObjectLocations(SpiceDefinition[] definitions)

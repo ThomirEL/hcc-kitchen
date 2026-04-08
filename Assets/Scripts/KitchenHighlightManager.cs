@@ -15,7 +15,6 @@ using System.Linq;
 ///   HighlightType  — HOW items are highlighted:
 ///     Circle       → 3D billboard ring surrounding the object
 ///     Arrow        → downward arrow just above the object
-///     Outline      → white silhouette contour lines
 ///
 ///   TargetingMode  — WHICH items are highlighted at any time:
 ///     All          → every remaining target shown at once
@@ -37,7 +36,6 @@ public class KitchenHighlightManager : MonoBehaviour
     {
         Circle,
         Arrow,
-        Outline,
     }
 
     public enum TargetingMode
@@ -60,10 +58,6 @@ public class KitchenHighlightManager : MonoBehaviour
 
     [Header("━━ Targeting Mode ━━━━━━━━━━━━━━━━━━━━━")]
     public TargetingMode targetingMode = TargetingMode.All;
-
-    [Tooltip("Number of items shown simultaneously in Subset mode.")]
-    [Min(1)]
-    public int subsetSize = 5;
 
     [Header("━━ Appearance ━━━━━━━━━━━━━━━━━━━━━━━━━")]
     public Color highlightColour = new Color(0f, 0.85f, 1f, 1f);
@@ -111,15 +105,15 @@ public class KitchenHighlightManager : MonoBehaviour
         ClearAllHighlights();
     }
 
-    private void CreateTrialList()
+    public void CreateTrialList(int permutationIndex = -1)
     {
         // For this experiment, we want to read the permutations from the CSV file
-        string trialPermutation = ReadPermutations();
+        string trialPermutation = ReadPermutations(permutationIndex);
 
-        // Find managers to get their list of items
-        CanManager canManager = FindFirstObjectByType<CanManager>();
-        DryGoodsManager dryGoodsManager = FindFirstObjectByType<DryGoodsManager>();
-        SpiceManager spiceManager = FindFirstObjectByType<SpiceManager>();
+        // Use singleton instances
+        CanManager canManager = CanManager.Instance;
+        DryGoodsManager dryGoodsManager = DryGoodsManager.Instance;
+        SpiceManager spiceManager = SpiceManager.Instance;
 
         if (canManager == null || dryGoodsManager == null || spiceManager == null)
         {
@@ -392,9 +386,8 @@ public class KitchenHighlightManager : MonoBehaviour
             (list[i], list[j]) = (list[j], list[i]);
         }
     }
-    private string ReadPermutations()
+    private string ReadPermutations(int permutationIndex = -1)
     {
-
         // Get permutations.csv file
         string path = Path.Combine(Application.dataPath, "Experiment Data");
         string fullPath = Path.Combine(path, "permutations.csv");
@@ -405,13 +398,19 @@ public class KitchenHighlightManager : MonoBehaviour
         }
 
         // Parse CSV to get list of permutations
-        List<(int, int, int)> permutations = new List<(int, int, int)>();
         string[] lines = File.ReadAllLines(fullPath);
         Debug.Log($"[Highlight] Loaded permutations.csv with {lines.Length - 1} permutations.");
-        int randomIndex = UnityEngine.Random.Range(1, lines.Length); // Skip header line
         
-        return lines[randomIndex];
-
+        // If no index specified, pick a random one
+        if (permutationIndex < 0)
+            permutationIndex = UnityEngine.Random.Range(1, lines.Length);
+        else
+            permutationIndex += 1; // Adjust for header row
+        
+        // Clamp to valid range
+        permutationIndex = Mathf.Clamp(permutationIndex, 1, lines.Length - 1);
+        
+        return lines[permutationIndex];
     }
 
 #if UNITY_EDITOR

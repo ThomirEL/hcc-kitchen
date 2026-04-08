@@ -29,6 +29,8 @@ public class DryGoodsDefinition
 
 public class DryGoodsManager : MonoBehaviour
 {
+    public static DryGoodsManager Instance { get; private set; }
+
     [Header("References")]
     public Camera labelCamera;
     public Image backgroundImage;
@@ -53,6 +55,13 @@ public class DryGoodsManager : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
         // Initialize dry goods definitions and find GameObjects BEFORE Start methods run
         foreach (DryGoodsDefinition dryGood in dryGoods)
         {
@@ -107,6 +116,33 @@ public class DryGoodsManager : MonoBehaviour
 
         // Start sequential rendering coroutine
         StartCoroutine(RenderAllSequential(matchedDryGoods.ToArray()));
+    }
+
+    /// <summary>Renders only the base dry good for the current trial (2D sprite).</summary>
+    public void RenderBaseCans()
+    {
+        DryGoodsDefinition baseDef = new DryGoodsDefinition { name = "", groupIndex = -1 };
+        baseDef.boxObject = GameObject.Find("Base Dry Good");
+        
+        if (baseDef.boxObject == null)
+        {
+            Debug.LogWarning("[DryGoodsManager] Base Dry Good not found in scene.");
+            return;
+        }
+
+        // Try to determine the group from nearby definitions
+        foreach (DryGoodsDefinition dryGood in dryGoods)
+        {
+            if (dryGood.boxObject != null && dryGood.boxObject.name == "Base Dry Good")
+            {
+                baseDef.groupIndex = dryGood.groupIndex;
+                if (baseDef.groupIndex >= 0 && baseDef.groupIndex < dryGoodsGroups.Length)
+                    baseDef.group = dryGoodsGroups[baseDef.groupIndex];
+                break;
+            }
+        }
+
+        StartCoroutine(RenderBaseDryGood(baseDef));
     }
 
     private DryGoodsDefinition[] ShuffleDryGoods(DryGoodsDefinition[] array)
@@ -204,7 +240,7 @@ public class DryGoodsManager : MonoBehaviour
 
     private IEnumerator RenderBaseDryGood(DryGoodsDefinition baseDryGood)
     {
-        Debug.Log("[DryGoodsManager] RenderBaseDryGood START");
+        //Debug.Log("[DryGoodsManager] RenderBaseDryGood START");
         _isRenderingSequence = true;
 
         if (baseDryGood.boxObject == null)
@@ -260,7 +296,7 @@ public class DryGoodsManager : MonoBehaviour
         yield return new WaitForEndOfFrame();
 
         _isRenderingSequence = false;
-        Debug.Log("[DryGoodsManager] RenderBaseDryGood END");
+        //Debug.Log("[DryGoodsManager] RenderBaseDryGood END");
     }
 
 private void ShuffleObjectLocations(DryGoodsDefinition[] definitions)

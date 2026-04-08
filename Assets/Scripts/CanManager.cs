@@ -29,6 +29,8 @@ public class CanDefinition
 
 public class CanManager : MonoBehaviour
 {
+    public static CanManager Instance { get; private set; }
+
     [Header("References")]
     public Camera labelCamera;
     public Image backgroundImage;
@@ -84,6 +86,13 @@ public class CanManager : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
         // Initialize can definitions and find GameObjects BEFORE Start methods run
         foreach (CanDefinition can in cans)
         {
@@ -134,6 +143,33 @@ public class CanManager : MonoBehaviour
         }
 
         StartCoroutine(RenderAllCansSequential(matchedCans.ToArray()));
+    }
+
+    /// <summary>Renders only the base can for the current trial (2D sprite).</summary>
+    public void RenderBaseCans()
+    {
+        CanDefinition baseDef = new CanDefinition { name = "", groupIndex = -1 };
+        baseDef.canObject = GameObject.Find("Base Can");
+        
+        if (baseDef.canObject == null)
+        {
+            Debug.LogWarning("[CanManager] Base Can not found in scene.");
+            return;
+        }
+
+        // Try to determine the group from nearby definitions
+        foreach (CanDefinition can in cans)
+        {
+            if (can.canObject != null && can.canObject.name == "Base Can")
+            {
+                baseDef.groupIndex = can.groupIndex;
+                if (baseDef.groupIndex >= 0 && baseDef.groupIndex < canGroups.Length)
+                    baseDef.group = canGroups[baseDef.groupIndex];
+                break;
+            }
+        }
+
+        StartCoroutine(RenderBaseCan(baseDef));
     }
 
     public void InstantiateBasicGroupGameObjects(int groupIndex, Vector3 worldPosition)
@@ -228,7 +264,7 @@ public class CanManager : MonoBehaviour
 
     private IEnumerator RenderBaseCan(CanDefinition baseCan)
     {
-        Debug.Log("[CanManager] RenderBaseCan START");
+        //Debug.Log("[CanManager] RenderBaseCan START");
         _isRenderingSequence = true;
 
         if (baseCan.canObject == null)
@@ -284,7 +320,7 @@ public class CanManager : MonoBehaviour
         yield return new WaitForEndOfFrame();
 
         _isRenderingSequence = false;
-        Debug.Log("[CanManager] RenderBaseCan END");
+        //Debug.Log("[CanManager] RenderBaseCan END");
     }
 
     private void ShuffleObjectLocations(CanDefinition[] definitions)
