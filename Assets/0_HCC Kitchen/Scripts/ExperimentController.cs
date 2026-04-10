@@ -28,6 +28,12 @@ public class ExperimentController : MonoBehaviour
         public int permutationIndex;
     }
 
+    [SerializeField]
+    public bool loggingEnabled = true;
+
+    [SerializeField]
+    public int ParticipantID = 0;
+
     [Header("━━ References ━━━━━━━━━━━━━━━━━━━━━━━━━")]
     public KitchenHighlightManager highlightManager;
     
@@ -54,6 +60,8 @@ public class ExperimentController : MonoBehaviour
     private Vector3 _playerStartPos;
     private Quaternion _playerStartRot;
 
+    private static readonly string[] ColumnNamesStudy = { "U_Frame", "Trial", "TrialPermutation"};
+
     // ─────────────────────────────────────────────────────────────────────
 
     private void Awake()
@@ -71,12 +79,17 @@ public class ExperimentController : MonoBehaviour
         // Auto-generate trials if not already set up
         if (trials.Count == 0)
             GenerateTrials();
+        if (loggingEnabled)
+            Logging.Logger.RecordExperimentController(ColumnNamesStudy, ParticipantID);
     }
+
 
     private void Update()
     {
         if (!_experimentActive || !_trialWaitingForCompletion)
             return;
+        
+        
 
         // Count down timer between trials
         _trialCompletionTimer -= Time.deltaTime;
@@ -94,6 +107,19 @@ public class ExperimentController : MonoBehaviour
                 EndExperiment();
             }
         }
+
+
+
+    }
+
+    private void Log()
+    {
+        Trial currentTrial = trials[_currentTrialIndex];
+        string [] msg = new string[ColumnNamesStudy.Length];
+        msg[0] = Time.frameCount.ToString();
+        msg[1] = _currentTrialIndex.ToString();
+        msg[2] = currentTrial.permutationIndex.ToString();
+        Logging.Logger.RecordExperimentController(msg, ParticipantID);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -220,6 +246,8 @@ public class ExperimentController : MonoBehaviour
             return;
         }
 
+        
+
         Trial trial = trials[_currentTrialIndex];
 
         // Reset player position
@@ -245,6 +273,9 @@ public class ExperimentController : MonoBehaviour
 
         Debug.Log($"[Experiment] Trial {_currentTrialIndex + 1}/{trials.Count} started | " +
                   $"{trial.highlightType} + {trial.targetingMode} (permutation: {trial.permutationIndex})");
+
+        if (loggingEnabled)
+            Log();
     }
 
     private IEnumerator WaitForTrialCompletion()

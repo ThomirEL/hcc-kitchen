@@ -353,7 +353,7 @@ public class CanManager : MonoBehaviour
         for (int i = 0; i < objects.Count; i++)
         {
             objects[i].transform.localPosition = positions[i];
-            Debug.Log($"[CanManager] Moved {objects[i].name} to local position {positions[i]}");
+            //Debug.Log($"[CanManager] Moved {objects[i].name} to local position {positions[i]}");
         }
     }
 

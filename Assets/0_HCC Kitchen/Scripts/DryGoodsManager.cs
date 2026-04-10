@@ -77,7 +77,7 @@ public class DryGoodsManager : MonoBehaviour
                 dryGood.group = dryGoodsGroups[dryGood.groupIndex];
 
             dryGood.boxObject = box;
-            Debug.Log($"[DryGoodsManager] Awake: Assigned boxObject '{box.name}' (parent: {box.transform.parent?.name ?? "null"}) to definition '{dryGood.name}'");
+            //Debug.Log($"[DryGoodsManager] Awake: Assigned boxObject '{box.name}' (parent: {box.transform.parent?.name ?? "null"}) to definition '{dryGood.name}'");
             //dryGood.boxObject.name = dryGood.name + "_Box";
         }
     }
@@ -187,10 +187,10 @@ public class DryGoodsManager : MonoBehaviour
 
     private IEnumerator RenderAllSequential(DryGoodsDefinition[] selection)
     {
-        Debug.Log("[DryGoodsManager] RenderAllSequential START - processing " + selection.Length + " items");
+        //Debug.Log("[DryGoodsManager] RenderAllSequential START - processing " + selection.Length + " items");
         for (int i = 0; i < selection.Length && i < 3; i++)
         {
-            Debug.Log($"  Item {i}: {selection[i].name} -> boxObject: {selection[i].boxObject?.name ?? "null"}");
+            //Debug.Log($"  Item {i}: {selection[i].name} -> boxObject: {selection[i].boxObject?.name ?? "null"}");
         }
         _isRenderingSequence = true;
 
@@ -231,7 +231,7 @@ public class DryGoodsManager : MonoBehaviour
             yield return new WaitForEndOfFrame();
         }
 
-        Debug.Log("[DryGoodsManager] RenderAllSequential - About to shuffle");
+        //Debug.Log("[DryGoodsManager] RenderAllSequential - About to shuffle");
         ShuffleObjectLocations(selection);
 
         _isRenderingSequence = false;
@@ -304,7 +304,7 @@ private void ShuffleObjectLocations(DryGoodsDefinition[] definitions)
     var objects = new List<GameObject>();
     var positions = new List<Vector3>();
 
-    Debug.Log($"[DryGoodsManager] ShuffleObjectLocations called with {definitions.Length} definitions");
+    //Debug.Log($"[DryGoodsManager] ShuffleObjectLocations called with {definitions.Length} definitions");
     
     foreach (var def in definitions)
     {
@@ -312,7 +312,7 @@ private void ShuffleObjectLocations(DryGoodsDefinition[] definitions)
         {
             objects.Add(def.boxObject);
             positions.Add(def.boxObject.transform.localPosition);
-            Debug.Log($"  Collecting: '{def.boxObject.name}' (parent: {def.boxObject.transform.parent?.name ?? "null"}, y={def.boxObject.transform.localPosition.y}, tag={def.boxObject.tag})");
+            //Debug.Log($"  Collecting: '{def.boxObject.name}' (parent: {def.boxObject.transform.parent?.name ?? "null"}, y={def.boxObject.transform.localPosition.y}, tag={def.boxObject.tag})");
             
             // Safety check: warn if this looks like a Can instead of a dry good box
             if (def.boxObject.name.Contains("Can") || def.boxObject.name == "Base Can")
@@ -338,7 +338,7 @@ private void ShuffleObjectLocations(DryGoodsDefinition[] definitions)
     for (int i = 0; i < objects.Count; i++)
     {
         objects[i].transform.localPosition = positions[i];
-        Debug.Log($"  [DryGoodsManager] Moved '{objects[i].name}' to local position {positions[i]}");
+        //Debug.Log($"  [DryGoodsManager] Moved '{objects[i].name}' to local position {positions[i]}");
     }
 }
 

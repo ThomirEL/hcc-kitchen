@@ -21,13 +21,17 @@ public class ExperimentControllerEditor : Editor
         // ── Reference ────────────────────────────────────────────────────
         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
         EditorGUILayout.LabelField("References", EditorStyles.miniBoldLabel);
-        
+
+        SerializedProperty loggingEnabledProp = serializedObject.FindProperty("loggingEnabled");
+        SerializedProperty participantIdProp = serializedObject.FindProperty("ParticipantID");
         SerializedProperty highlightManagerProp = serializedObject.FindProperty("highlightManager");
         SerializedProperty playerStartPosProp = serializedObject.FindProperty("playerStartPosition");
-        
+
+        EditorGUILayout.PropertyField(loggingEnabledProp);
+        EditorGUILayout.PropertyField(participantIdProp);
         EditorGUILayout.PropertyField(highlightManagerProp);
         EditorGUILayout.PropertyField(playerStartPosProp);
-        
+
         EditorGUILayout.EndVertical();
 
         EditorGUILayout.Space(6);

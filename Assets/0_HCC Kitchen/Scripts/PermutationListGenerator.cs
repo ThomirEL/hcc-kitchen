@@ -40,8 +40,8 @@ public class PermutationListGenerator : MonoBehaviour
         string csvPath = Path.Combine(experimentDataPath, "permutations.csv");
         SavePermutationsToCSV(permutations, csvPath);
 
-        Debug.Log($"Permutations saved to: {csvPath}");
-        Debug.Log($"Total permutations: {permutations.Count}");
+        //Debug.Log($"Permutations saved to: {csvPath}");
+        //Debug.Log($"Total permutations: {permutations.Count}");
     }
 
     private void SavePermutationsToCSV(List<(int, int, int)> permutations, string filePath)

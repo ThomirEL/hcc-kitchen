@@ -373,7 +373,7 @@ public class KitchenHighlightManager : MonoBehaviour
             }
         }
 
-        Debug.Log($"[Highlight] Found {added} random items with tag '{tag}'.");
+        //Debug.Log($"[Highlight] Found {added} random items with tag '{tag}'.");
         return addedItems;
     }
 

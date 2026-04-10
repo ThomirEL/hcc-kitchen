@@ -191,7 +191,7 @@ public class SpiceManager : MonoBehaviour
 
     private IEnumerator RenderAllSpicesSequential(SpiceDefinition[] spicesToRender)
     {
-        Debug.Log("[SpiceManager] RenderAllSpicesSequential START");
+        //Debug.Log("[SpiceManager] RenderAllSpicesSequential START");
         _isRenderingSequence = true;
 
         for (int i = 0; i < spicesToRender.Length; i++)
@@ -329,7 +329,7 @@ public class SpiceManager : MonoBehaviour
         for (int i = 0; i < objects.Count; i++)
         {
             objects[i].transform.localPosition = positions[i];
-            Debug.Log($"[SpiceManager] Moved {objects[i].name} to local position {positions[i]}");
+            //Debug.Log($"[SpiceManager] Moved {objects[i].name} to local position {positions[i]}");
         }
     }
 
