@@ -78,6 +78,7 @@ public class KitchenHighlightManager : MonoBehaviour
     // INTERNAL STATE
     // ─────────────────────────────────────────────────────────────────────
 
+    private bool _initializedLogging = false;
     private List<ItemHighlight>    _orderedTargets = new List<ItemHighlight>();
     private HashSet<ItemHighlight> _collectedItems = new HashSet<ItemHighlight>();
     private List<string[]> _targetGroups = new List<string[]>(); // Store for text updates
@@ -87,6 +88,8 @@ public class KitchenHighlightManager : MonoBehaviour
 
     private HighlightType _lastHighlightType = (HighlightType)(-1);
     private TargetingMode _lastTargetingMode = (TargetingMode)(-1);
+
+    private static readonly string[] ColumnNamesStudy = { "U_Frame", "HighlightType", "TargetingMode", "RemainingTargets", "CollectedItem", "CollectedItemTag", "CollectedItemPosition", "WasHighlighted"};
 
     // ─────────────────────────────────────────────────────────────────────
     // LIFECYCLE
@@ -102,6 +105,35 @@ public class KitchenHighlightManager : MonoBehaviour
         CreateTrialList();
         // Highlights OFF by default — do not call StartTrial() here
         ClearAllHighlights();
+        Logging.Logger.ParticipantIDSet.AddListener(OnParticipantIDSet);
+    }
+
+    private void OnParticipantIDSet()
+    {
+        Logging.Logger.RecordItemHighlights(ColumnNamesStudy);
+        _initializedLogging = true;
+        Debug.Log($"[Highlight] Logging initialized for participant {Logging.Logger.participantID}");
+    }
+
+    private void Log(ItemHighlight item)
+    {
+        if (!_initializedLogging)
+        {
+            Debug.LogWarning("[Highlight] Log() called before participant ID was set — skipping.");
+            return;
+        }
+        // private static readonly string[] ColumnNamesStudy = { "U_Frame", "HighlightType", "TargetingMode", "RemainingTargets", "CollectedItem", "CollectedItemTag", "CollectedItemPosition", "WasHighlighted"};
+        string[] msg = new string[ColumnNamesStudy.Length];
+        msg[0] = Time.frameCount.ToString();    
+        msg[1] = highlightType.ToString();
+        msg[2] = targetingMode.ToString();
+        msg[3] = RemainingCount().ToString();
+        msg[4] = item != null ? item.gameObject.name : "null";
+        msg[5] = item != null ? item.gameObject.tag : "null";
+        msg[6] = item != null ? item.transform.position.ToString("F3") : "null";
+        msg[7] = item != null && GetItemsToHighlight().Contains(item) ? "True" : "False";
+
+        Logging.Logger.RecordItemHighlights(msg);
     }
 
     public void CreateTrialList(int permutationIndex = -1)
@@ -456,6 +488,8 @@ public class KitchenHighlightManager : MonoBehaviour
         if (item == null || !targets.Contains(item)) return;
         if (_collectedItems.Contains(item)) return;
         if (!_trialActive) return;
+
+        Log(item);
 
         _collectedItems.Add(item);
 

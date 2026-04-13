@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using TMPro;
 
 /// <summary>
 /// Experiment controller — manages multiple trials with automatic progression.
@@ -28,11 +29,10 @@ public class ExperimentController : MonoBehaviour
         public int permutationIndex;
     }
 
-    [SerializeField]
-    public bool loggingEnabled = true;
+    private TMP_InputField participantIDInput;
 
     [SerializeField]
-    public int ParticipantID = 0;
+    public bool loggingEnabled = true;
 
     [Header("━━ References ━━━━━━━━━━━━━━━━━━━━━━━━━")]
     public KitchenHighlightManager highlightManager;
@@ -60,6 +60,8 @@ public class ExperimentController : MonoBehaviour
     private Vector3 _playerStartPos;
     private Quaternion _playerStartRot;
 
+    private bool _loggingInitialized = false;
+
     private static readonly string[] ColumnNamesStudy = { "U_Frame", "Trial", "TrialPermutation"};
 
     // ─────────────────────────────────────────────────────────────────────
@@ -72,6 +74,8 @@ public class ExperimentController : MonoBehaviour
             _playerStartPos = playerStartPosition.position;
             _playerStartRot = playerStartPosition.rotation;
         }
+
+        participantIDInput = GameObject.Find("ID_Input").GetComponent<TMP_InputField>();
     }
 
     private void Start()
@@ -80,7 +84,30 @@ public class ExperimentController : MonoBehaviour
         if (trials.Count == 0)
             GenerateTrials();
         if (loggingEnabled)
-            Logging.Logger.RecordExperimentController(ColumnNamesStudy, ParticipantID);
+            Logging.Logger.ParticipantIDSet.AddListener(OnParticipantIDSet);
+    }
+
+    private void OnParticipantIDSet()
+    {
+        if (loggingEnabled)
+            Logging.Logger.RecordExperimentController(ColumnNamesStudy);
+        
+        _loggingInitialized = true;
+        Debug.Log($"[Experiment] Logging initialized for participant {Logging.Logger.participantID}");
+    }
+
+    public void SetParticipantID()
+    {
+        if (int.TryParse(participantIDInput.text, out int parsedID))
+        {
+            Logging.Logger.participantID = parsedID;
+            Debug.Log($"[Experiment] Participant ID set to {Logging.Logger.participantID}");
+            Logging.Logger.ParticipantIDSet?.Invoke();
+        }
+        else
+        {
+            Debug.LogError($"[Experiment] Invalid Participant ID: {participantIDInput.text}");
+        }
     }
 
 
@@ -114,12 +141,18 @@ public class ExperimentController : MonoBehaviour
 
     private void Log()
     {
+
+        if (!_loggingInitialized)
+        {
+            Debug.LogWarning("[Experiment] Log() called before participant ID was set — skipping.");
+            return;
+        }
         Trial currentTrial = trials[_currentTrialIndex];
         string [] msg = new string[ColumnNamesStudy.Length];
         msg[0] = Time.frameCount.ToString();
         msg[1] = _currentTrialIndex.ToString();
         msg[2] = currentTrial.permutationIndex.ToString();
-        Logging.Logger.RecordExperimentController(msg, ParticipantID);
+        Logging.Logger.RecordExperimentController(msg);
     }
 
     // ─────────────────────────────────────────────────────────────────────

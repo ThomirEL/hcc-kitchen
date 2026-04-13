@@ -31,11 +31,13 @@
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.StarterAssets.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.DeviceSimulator.csproj" />
   <Project Path="Unity.XR.CompositionLayers.UIInteraction.csproj" />
+  <Project Path="Unity.XR.Interaction.Toolkit.Samples.SpatialKeyboard.csproj" />
   <Project Path="Unity.XR.CompositionLayers.csproj" />
   <Project Path="Unity.XR.CompositionLayers.Editor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Unity.Burst.Editor.csproj" />
   <Project Path="Unity.XR.ARFoundation.VisualScripting.csproj" />
+  <Project Path="Unity.XR.Interaction.Toolkit.Samples.SpatialKeyboard.Editor.csproj" />
   <Project Path="Unity.Formats.Fbx.Editor.csproj" />
   <Project Path="Unity.XR.ARSubsystems.Editor.csproj" />
   <Project Path="Unity.XR.Hands.Analytics.Editor.csproj" />

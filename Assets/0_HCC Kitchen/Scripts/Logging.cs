@@ -5,6 +5,7 @@ using System.Threading;
 using System.IO;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class Logging : MonoBehaviour
 {
@@ -20,6 +21,10 @@ public class Logging : MonoBehaviour
     */
 
     public static Logging Logger { get; private set; }
+
+    public UnityEvent ParticipantIDSet;
+
+    public int participantID;
 
     private Thread logThread;
 
@@ -55,6 +60,12 @@ public class Logging : MonoBehaviour
 
     public void CreateLogger(string For, string at)
     {
+        if (participantID == 0)
+        {
+            Debug.LogError("[Logging] Participant ID not set. Cannot create logger.");
+            return;
+        }
+
         if(writers.ContainsKey(For))
         {
             return;
@@ -85,7 +96,7 @@ public class Logging : MonoBehaviour
         }
     }
 
-    public void RecordExperimentController(string[] msg, int participantID)
+    public void RecordExperimentController(string[] msg)
     {
         if (!writers.ContainsKey("ExperimentController"))
         {
@@ -94,6 +105,17 @@ public class Logging : MonoBehaviour
             CreateLogger("ExperimentController", "ExperimentController-participant"+participantID+"-"+fileName_time);
         }
         Record("ExperimentController", msg); 
+    }
+
+    public void RecordItemHighlights(string[] msg)
+    {
+        if (!writers.ContainsKey("ItemHighlighter"))
+        {
+            DateTime now = DateTime.Now;
+            string fileName_time = string.Format("{0}-{1:00}-{2:00}-{3:00}-{4:00}", now.Year, now.Month, now.Day, now.Hour, now.Minute);
+            CreateLogger("ItemHighlighter", "ItemHighlighter-participant"+participantID+"-"+fileName_time);
+        }
+        Record("ItemHighlighter", msg); 
     }
 
     public void Record(string writer, string[] msg)
