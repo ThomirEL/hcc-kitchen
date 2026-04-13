@@ -22,6 +22,9 @@ public class Logging : MonoBehaviour
 
     public static Logging Logger { get; private set; }
 
+    [SerializeField]
+    private bool LoggingEnabled = true;
+
     public UnityEvent ParticipantIDSet;
 
     public int participantID;
@@ -60,6 +63,10 @@ public class Logging : MonoBehaviour
 
     public void CreateLogger(string For, string at)
     {
+        if (!LoggingEnabled){
+            Debug.LogWarning($"[Logging] Attempted to create logger for '{For}' at '{at}', but logging is disabled.");
+            return;
+        }
         if (participantID == 0)
         {
             Debug.LogError("[Logging] Participant ID not set. Cannot create logger.");
@@ -116,6 +123,17 @@ public class Logging : MonoBehaviour
             CreateLogger("ItemHighlighter", "ItemHighlighter-participant"+participantID+"-"+fileName_time);
         }
         Record("ItemHighlighter", msg); 
+    }
+
+    public void RecordVRStats(string[] msg)
+    {
+        if (!writers.ContainsKey("VRTracking"))
+        {
+            DateTime now = DateTime.Now;
+            string fileName_time = string.Format("{0}-{1:00}-{2:00}-{3:00}-{4:00}", now.Year, now.Month, now.Day, now.Hour, now.Minute);
+            CreateLogger("VRTracking", "VRTracking-participant"+participantID+"-"+fileName_time);
+        }
+        Record("VRTracking", msg); 
     }
 
     public void Record(string writer, string[] msg)
