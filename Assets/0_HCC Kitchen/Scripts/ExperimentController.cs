@@ -51,6 +51,9 @@ public class ExperimentController : MonoBehaviour
     [Header("━━ Trials (Auto-generated) ━━━━━━━━━━━━━━━━━━━━")]
     public List<Trial> trials = new List<Trial>();
 
+    [SerializeField]
+    private int randomSeed = 42;
+
     // ── Internal State ────────────────────────────────────────────────────
     private int _currentTrialIndex = -1;
     private bool _experimentActive = false;
@@ -74,6 +77,8 @@ public class ExperimentController : MonoBehaviour
             _playerStartPos = playerStartPosition.position;
             _playerStartRot = playerStartPosition.rotation;
         }
+
+        Random.InitState(randomSeed);
 
         participantIDInput = GameObject.Find("ID_Input").GetComponent<TMP_InputField>();
     }

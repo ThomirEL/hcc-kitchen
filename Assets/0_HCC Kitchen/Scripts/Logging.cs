@@ -56,7 +56,6 @@ public class Logging : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-       
         logThread = new Thread(WritetoFile);
         logThread.Start();
     }

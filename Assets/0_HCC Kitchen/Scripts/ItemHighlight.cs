@@ -35,6 +35,10 @@ public class ItemHighlight : MonoBehaviour
     [Tooltip("Gap between arrow tip and top of object in metres.")]
     public float arrowGap = 0.04f;
 
+    [Header("━━ Shader Settings ━━━━━━━━━━━━━━━━━━━━━━━━━━━━")]
+    [Tooltip("The shader used for overlays. Must be assigned to prevent stripping in builds.")]
+    [SerializeField] private Shader overlayShader;
+
     // ── Visuals ───────────────────────────────────────────────────────────
     private GameObject        _ringObj;
     private GameObject        _arrowObj;
@@ -381,11 +385,12 @@ public class ItemHighlight : MonoBehaviour
 
     private Material BuildUnlitMaterial(Color col)
     {
-        Shader   s   = Shader.Find("Custom/OverlayUnlit")
+        Shader s = overlayShader
+                    ?? Shader.Find("Custom/OverlayUnlit")
                     ?? Shader.Find("Universal Render Pipeline/Unlit")
                     ?? Shader.Find("Unlit/Color");
         Material mat = new Material(s) { color = col };
-        
+
         return mat;
     }
 }
