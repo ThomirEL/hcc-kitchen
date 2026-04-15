@@ -27,15 +27,14 @@ public class Logging : MonoBehaviour
 
     public UnityEvent ParticipantIDSet;
 
+    private volatile bool addingNew = false;
+    private volatile bool running = true;
+
     public int participantID;
 
     private Thread logThread;
 
     private Dictionary<string, Writer> writers = new Dictionary<string, Writer>();
-
-    private bool running = true;
-
-    private bool addingNew = false;
 
     private string prefix="";
 
@@ -84,18 +83,25 @@ public class Logging : MonoBehaviour
 
     void WritetoFile()
     {
-        //will drop remaining data if closed early
         while (running)
         {
-            if(addingNew)continue;
-            //Could maybe put back to normal foreach
+            if (addingNew)
+            {
+                Thread.Sleep(1);
+                continue;
+            }
+
             string[] keys = new string[writers.Keys.Count];
-            writers.Keys.CopyTo(keys,0);                // ????
-            foreach(string K in keys)   
+            writers.Keys.CopyTo(keys, 0);
+            foreach (string K in keys)
             {
                 writers[K].write();
             }
+
+            // Don't spinlock — yield the thread between write passes
+            Thread.Sleep(16); // ~60hz is more than enough for logging
         }
+
         foreach (Writer w in writers.Values)
         {
             w.close();
