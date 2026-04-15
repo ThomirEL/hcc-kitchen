@@ -27,10 +27,10 @@ public class ExperimentControllerEditor : Editor
         SerializedProperty highlightManagerProp = serializedObject.FindProperty("highlightManager");
         SerializedProperty playerStartPosProp = serializedObject.FindProperty("playerStartPosition");
 
-        EditorGUILayout.PropertyField(loggingEnabledProp);
-        EditorGUILayout.PropertyField(participantIdProp);
-        EditorGUILayout.PropertyField(highlightManagerProp);
-        EditorGUILayout.PropertyField(playerStartPosProp);
+        if (loggingEnabledProp != null) EditorGUILayout.PropertyField(loggingEnabledProp);
+        if (participantIdProp != null) EditorGUILayout.PropertyField(participantIdProp);
+        if (highlightManagerProp != null) EditorGUILayout.PropertyField(highlightManagerProp);
+        if (playerStartPosProp != null) EditorGUILayout.PropertyField(playerStartPosProp);
 
         EditorGUILayout.EndVertical();
 
