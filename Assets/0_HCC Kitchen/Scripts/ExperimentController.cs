@@ -72,7 +72,7 @@ public class ExperimentController : MonoBehaviour
 
     private bool _loggingInitialized = false;
 
-    private static readonly string[] ColumnNamesStudy = { "U_Frame", "Trial", "TrialPermutation"};
+    private static readonly string[] ColumnNamesStudy = { "U_Frame", "Trial", "TrialPermutation", "HighlightType", "TargetingMode" };
 
     // ─────────────────────────────────────────────────────────────────────
 
@@ -162,6 +162,8 @@ public class ExperimentController : MonoBehaviour
         msg[0] = Time.frameCount.ToString();
         msg[1] = _currentTrialIndex.ToString();
         msg[2] = currentTrial.permutationIndex.ToString();
+        msg[3] = currentTrial.highlightType.ToString();
+        msg[4] = currentTrial.targetingMode.ToString();
         Logging.Logger.RecordExperimentController(msg);
     }
 

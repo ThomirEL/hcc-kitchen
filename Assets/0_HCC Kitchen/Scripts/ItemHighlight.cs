@@ -379,7 +379,7 @@ public class ItemHighlight : MonoBehaviour
         return new Bounds(transform.position, Vector3.one * 0.15f);
     }
 
-    private Material BuildUnlitMaterial(Color col)
+     private Material BuildUnlitMaterial(Color col)
     {
         Shader   s   = Shader.Find("Custom/OverlayUnlit")
                     ?? Shader.Find("Universal Render Pipeline/Unlit")

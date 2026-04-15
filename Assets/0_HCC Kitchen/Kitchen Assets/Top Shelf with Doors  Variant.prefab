@@ -130,6 +130,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -389,6 +390,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -597,6 +599,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -857,6 +860,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -1091,6 +1095,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -1299,6 +1304,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -1564,6 +1570,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -1772,6 +1779,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -2027,6 +2035,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -2243,6 +2252,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -2516,35 +2526,10 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1856579888120495442}
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2274313090322685190, guid: 0d697dc24392f4f45bc51a75dba36c8a, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 4801993521195239041}
     - targetCorrespondingSourceObject: {fileID: 4268278386012297543, guid: 0d697dc24392f4f45bc51a75dba36c8a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 560902399591781528}
   m_SourcePrefab: {fileID: 100100000, guid: 0d697dc24392f4f45bc51a75dba36c8a, type: 3}
---- !u!1 &6084425488056474440 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2274313090322685190, guid: 0d697dc24392f4f45bc51a75dba36c8a, type: 3}
-  m_PrefabInstance: {fileID: 5476310119979681358}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &4801993521195239041
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6084425488056474440}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a1c3c27315aa5674d8fec819f471147a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RandomSurfacePlacement
-  allowedFaces: 1
-  minSpacing: 0.1
-  surfaceOffset: 0
-  maxAttempts: 200
-  randomSeed: 0
 --- !u!4 &8116459427037410938 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4277495860866805812, guid: 0d697dc24392f4f45bc51a75dba36c8a, type: 3}
@@ -2702,6 +2687,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -2941,6 +2927,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -3201,6 +3188,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -3409,6 +3397,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -3669,6 +3658,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -3877,6 +3867,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
@@ -4141,6 +4132,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6275dfc17f2a77e409810f4d5ec0a07d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemHighlight
+  disappearOnCollect: 1
   highlightColour: {r: 1, g: 1, b: 1, a: 1}
   boundsPadding: 0.05
   ringTubeRadius: 0.012
