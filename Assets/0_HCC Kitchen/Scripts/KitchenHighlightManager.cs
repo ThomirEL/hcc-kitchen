@@ -256,74 +256,74 @@ public class KitchenHighlightManager : MonoBehaviour
     }
 
     private Vector3 GetGroupCenterFromTMP(TextMeshProUGUI tmp, int groupIndex)
-{
-    tmp.ForceMeshUpdate();
-    TMP_TextInfo textInfo = tmp.textInfo;
-
-    List<(int start, int end)> groups = new List<(int, int)>();
-
-    int currentStart = -1;
-
-    // Build groups based on empty lines
-    for (int i = 0; i < textInfo.lineCount; i++)
     {
-        TMP_LineInfo line = textInfo.lineInfo[i];
+        tmp.ForceMeshUpdate();
+        TMP_TextInfo textInfo = tmp.textInfo;
 
-        string lineText = tmp.text.Substring(
-            line.firstCharacterIndex,
-            line.characterCount
-        ).Trim();
+        List<(int start, int end)> groups = new List<(int, int)>();
 
-        if (string.IsNullOrEmpty(lineText))
+        int currentStart = -1;
+
+        // Build groups based on empty lines
+        for (int i = 0; i < textInfo.lineCount; i++)
         {
-            if (currentStart != -1)
+            TMP_LineInfo line = textInfo.lineInfo[i];
+
+            string lineText = tmp.text.Substring(
+                line.firstCharacterIndex,
+                line.characterCount
+            ).Trim();
+
+            if (string.IsNullOrEmpty(lineText))
             {
-                groups.Add((currentStart, i - 1));
-                currentStart = -1;
+                if (currentStart != -1)
+                {
+                    groups.Add((currentStart, i - 1));
+                    currentStart = -1;
+                }
+            }
+            else
+            {
+                if (currentStart == -1)
+                    currentStart = i;
             }
         }
-        else
+
+        if (currentStart != -1)
+            groups.Add((currentStart, textInfo.lineCount - 1));
+
+        if (groupIndex >= groups.Count)
         {
-            if (currentStart == -1)
-                currentStart = i;
+            Debug.LogWarning($"TMP group index {groupIndex} out of range.");
+            return tmp.transform.position;
         }
-    }
 
-    if (currentStart != -1)
-        groups.Add((currentStart, textInfo.lineCount - 1));
+        var (startLine, endLine) = groups[groupIndex];
 
-    if (groupIndex >= groups.Count)
-    {
-        Debug.LogWarning($"TMP group index {groupIndex} out of range.");
-        return tmp.transform.position;
-    }
+        Vector3 min = Vector3.positiveInfinity;
+        Vector3 max = Vector3.negativeInfinity;
 
-    var (startLine, endLine) = groups[groupIndex];
-
-    Vector3 min = Vector3.positiveInfinity;
-    Vector3 max = Vector3.negativeInfinity;
-
-    for (int i = startLine; i <= endLine; i++)
-    {
-        TMP_LineInfo line = textInfo.lineInfo[i];
-
-        for (int j = line.firstCharacterIndex; j <= line.lastCharacterIndex; j++)
+        for (int i = startLine; i <= endLine; i++)
         {
-            if (!textInfo.characterInfo[j].isVisible) continue;
+            TMP_LineInfo line = textInfo.lineInfo[i];
 
-            var charInfo = textInfo.characterInfo[j];
+            for (int j = line.firstCharacterIndex; j <= line.lastCharacterIndex; j++)
+            {
+                if (!textInfo.characterInfo[j].isVisible) continue;
 
-            min = Vector3.Min(min, charInfo.bottomLeft);
-            max = Vector3.Max(max, charInfo.topRight);
+                var charInfo = textInfo.characterInfo[j];
+
+                min = Vector3.Min(min, charInfo.bottomLeft);
+                max = Vector3.Max(max, charInfo.topRight);
+            }
         }
+
+        Vector3 localCenter = (min + max) / 2f;
+        // Push to the right
+        localCenter += new Vector3(0.3f, 0.025f, 0.2f);
+
+        return tmp.transform.TransformPoint(localCenter);
     }
-
-    Vector3 localCenter = (min + max) / 2f;
-    // Push to the right
-    localCenter += new Vector3(0.3f, 0f, 0.2f);
-
-    return tmp.transform.TransformPoint(localCenter);
-}
 
     private string FormatTargetList(List<string[]> targetGroups)
     {

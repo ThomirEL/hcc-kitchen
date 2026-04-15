@@ -183,8 +183,6 @@ public class CanManager : MonoBehaviour
         while (_isRenderingSequence)
             yield return null;
 
-        // Find all the positions
-        GameObject[] positions = GameObject.FindGameObjectsWithTag("locations").OrderBy(go => go.name).ToArray();
         // Find the can group at this index to get the group info
         CanGroup group = canGroups[groupIndex];
         CanDefinition baseDef = new CanDefinition { name = "", groupIndex = groupIndex, group = group };
