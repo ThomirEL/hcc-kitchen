@@ -602,6 +602,20 @@ public class KitchenHighlightManager : MonoBehaviour
         }
     }
 
+    public void EnableCollectedItems()
+    {
+        foreach (var item in _collectedItems)
+        {
+            if (item != null)
+            {
+                item.gameObject.SetActive(true);
+                item.ClearAll();
+            }
+        }
+        _collectedItems.Clear();
+        RefreshHighlights();
+    }
+    
     /// <summary>
     /// In subset mode, highlight all remaining targets sharing the tag of the first remaining target
     /// based on the original targets list order.

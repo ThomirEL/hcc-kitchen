@@ -316,8 +316,8 @@ public class ExperimentController : MonoBehaviour
             if (xr != null)
             {
                 float cameraYOffset = xr.Camera.transform.position.y - xr.transform.position.y;
-Vector3 adjustedTarget = new Vector3(_playerStartPos.x, _playerStartPos.y + cameraYOffset, _playerStartPos.z);
-xr.MoveCameraToWorldLocation(adjustedTarget);
+                Vector3 adjustedTarget = new Vector3(_playerStartPos.x, _playerStartPos.y + cameraYOffset, _playerStartPos.z);
+                xr.MoveCameraToWorldLocation(adjustedTarget);
             }
             else
             {
@@ -326,6 +326,8 @@ xr.MoveCameraToWorldLocation(adjustedTarget);
 
         }
 
+        // Reset all collected items
+        highlightManager.EnableCollectedItems();
         // Generate new trial list for this trial using the permutation index
         highlightManager.CreateTrialList(trial.permutationIndex);
         
