@@ -114,6 +114,11 @@ public class XRSlideInteractable : MonoBehaviour
         ApplyPosition();
     }
 
+    public void ResetPosition()
+    {
+        _currentOffset = closedPosition;
+    }
+
     private void UpdateGrabbed()
     {
         // How far has the hand moved along the slide axis since we grabbed?

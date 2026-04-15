@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using TMPro;
+using UnityEngine.XR.ARSubsystems;
+using Unity.XR.CoreUtils;
 
 /// <summary>
 /// Experiment controller — manages multiple trials with automatic progression.
@@ -40,6 +42,9 @@ public class ExperimentController : MonoBehaviour
     [Tooltip("Player transform to reset position between trials.")]
     public Transform playerStartPosition;
 
+    [SerializeField]
+    public GameObject _player;
+
     [Header("━━ Trial Configuration ━━━━━━━━━━━━━━━━━━━━")]
     [Min(1)]
     public int numTrials = 10;
@@ -53,6 +58,8 @@ public class ExperimentController : MonoBehaviour
 
     [SerializeField]
     private int randomSeed = 42;
+
+
 
     // ── Internal State ────────────────────────────────────────────────────
     private int _currentTrialIndex = -1;
@@ -121,8 +128,6 @@ public class ExperimentController : MonoBehaviour
         if (!_experimentActive || !_trialWaitingForCompletion)
             return;
         
-        
-
         // Count down timer between trials
         _trialCompletionTimer -= Time.deltaTime;
         if (_trialCompletionTimer <= 0f)
@@ -288,11 +293,35 @@ public class ExperimentController : MonoBehaviour
 
         Trial trial = trials[_currentTrialIndex];
 
-        // Reset player position
+        HingeDoorInteractable[] hinges = FindObjectsByType<HingeDoorInteractable>();
+        foreach (var obj in hinges)
+        {
+            obj.ResetRotation();
+        }
+
+        XRSlideInteractable[] sliders = FindObjectsByType<XRSlideInteractable>();
+        foreach (var slider in sliders)
+        {
+            slider.ResetPosition();
+        }
+
+
+
+
         if (playerStartPosition != null)
         {
-            playerStartPosition.position = _playerStartPos;
-            playerStartPosition.rotation = _playerStartRot;
+            XROrigin xr = _player.GetComponent<XROrigin>();
+            if (xr != null)
+            {
+                float cameraYOffset = xr.Camera.transform.position.y - xr.transform.position.y;
+Vector3 adjustedTarget = new Vector3(_playerStartPos.x, _playerStartPos.y + cameraYOffset, _playerStartPos.z);
+xr.MoveCameraToWorldLocation(adjustedTarget);
+            }
+            else
+            {
+                Debug.LogWarning("[Experiment] Player does not have XROrigin component — cannot reset position.");
+            }
+
         }
 
         // Generate new trial list for this trial using the permutation index

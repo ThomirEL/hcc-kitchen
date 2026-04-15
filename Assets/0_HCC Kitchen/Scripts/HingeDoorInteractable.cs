@@ -83,6 +83,17 @@ public class HingeDoorInteractable : MonoBehaviour
         //Debug.Log($"[HingeDoor] Released at angle: {_currentAngle:F1}°");
     }
 
+    /// <summary>
+    /// Resets the door angle to the minimum angle (usually 0).
+    /// This is called by the world reset system between trials.
+    /// </summary>
+    public void ResetRotation()
+    {
+        _currentAngle = minAngle;
+        _angularVelocity = 0f;
+        transform.localRotation = Quaternion.AngleAxis(_currentAngle, Vector3.up);
+    }
+
     private void Update()
     {
         if (_isGrabbed && _activeInteractor != null)
