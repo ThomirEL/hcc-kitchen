@@ -326,13 +326,19 @@ public class ExperimentController : MonoBehaviour
 
         }
 
+        
+
         // Reset all collected items
         highlightManager.EnableCollectedItems();
         // Generate new trial list for this trial using the permutation index
-        highlightManager.CreateTrialList(trial.permutationIndex);
-        
+
         // Refresh and render all managers
         RenderManager.Instance.RefreshAndRenderAll();
+
+        
+        highlightManager.CreateTrialList(trial.permutationIndex);
+        
+        
         
         // Configure and start trial
         highlightManager.SetCondition(trial.highlightType, trial.targetingMode);
