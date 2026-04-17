@@ -1,0 +1,25 @@
+{
+  "interactions": [
+    {
+  "trigger": { "item": "Knife", "state": "held" },
+  "effects": [
+    { "item": "Chopping Board", "key": "knife.held", "value": 0.8 },
+    { "item": "Juice", "key": "knife.held", "value": -0.5 }
+  ]
+},
+    {
+      "trigger": { "item": "Salt", "state": "held" },
+      "effects": [
+        { "item": "Juice",  "key": "salt.held", "value": 0.5 },
+        { "item": "Pepper", "key": "salt.held", "value": 0.7 }
+      ]
+    },
+    {
+      "trigger": { "item": "Pot", "state": "held" },
+      "effects": [
+        { "item": "Stove",  "key": "pot.held", "value": 0.9 },
+        { "item": "Water",  "key": "pot.held", "value": 0.7 }
+      ]
+    }
+  ]
+}
