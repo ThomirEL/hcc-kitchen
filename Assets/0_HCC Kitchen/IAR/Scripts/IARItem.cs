@@ -3,6 +3,8 @@ using UnityEngine;
 
 [RequireComponent(typeof(IARPart))]
 [RequireComponent(typeof(UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable))]
+
+// For all interactions with items
 public class IARItem : MonoBehaviour
 {
 

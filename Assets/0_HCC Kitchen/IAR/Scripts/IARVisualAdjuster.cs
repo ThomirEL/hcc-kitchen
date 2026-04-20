@@ -5,6 +5,8 @@ public class IARVisualAdjuster : MonoBehaviour
 {
     [Header("Mode")]
     public bool useTransparency = true;
+    public bool useBlur = false;
+    public bool useOutline = false;
 
     [Header("Smoothing")]
     public float lerpSpeed = 4f;
@@ -13,10 +15,23 @@ public class IARVisualAdjuster : MonoBehaviour
     [Range(0f, 1f)] public float minAlpha = 0.2f;
     [Range(0f, 1f)] public float maxAlpha = 1f;
 
+    [Header("Blur (DoI inverted: high DoI = no blur, low DoI = max blur)")]
+    [Range(0f, 1f)] public float maxBlur = 1f;
+
+    [Header("Outline Highlight (DoI direct: high DoI = max outline, low DoI = no outline)")]
+    [Range(0f, 1f)] public float maxOutlineWidth = 0.05f;
+    public Color outlineColor = Color.yellow;
+
     IARPart              _part;
     Renderer             _renderer;
     Material             _material;
     float _currentAlpha = 1f;
+    float _currentBlur = 0f;
+    float _currentOutlineWidth = 0f;
+
+    static readonly int BlurID = Shader.PropertyToID("_BlurAmount");
+    static readonly int OutlineWidthID = Shader.PropertyToID("_OutlineWidth");
+    static readonly int OutlineColorID = Shader.PropertyToID("_OutlineColor");
 
     void Awake()
     {
@@ -36,6 +51,8 @@ public class IARVisualAdjuster : MonoBehaviour
         float doi = _part.currentDoI;
 
         if (useTransparency) ApplyTransparency(doi);
+        if (useBlur) ApplyBlur(doi);
+        if (useOutline) ApplyOutline(doi);
     }
 
     void ApplyTransparency(float doi)
@@ -48,15 +65,24 @@ public class IARVisualAdjuster : MonoBehaviour
         Color color = _material.color;
         color.a = _currentAlpha;
         _material.color = color;
+    }
 
-        // Debug: Print alpha value for the chopping board
-        if (gameObject.name == "Chopping Board")
-            Debug.Log($"ChoppingBoard Alpha: {_currentAlpha:F3} (DoI: {doi:F3}, Target: {targetAlpha:F3})");
-        
-        if (gameObject.name == "Knife")
-            Debug.Log($"Knife Alpha: {_currentAlpha:F3} (DoI: {doi:F3}, Target: {targetAlpha:F3})");
-        
-        if (gameObject.name == "Juice")
-            Debug.Log($"Juice Alpha: {_currentAlpha:F3} (DoI: {doi:F3}, Target: {targetAlpha:F3})");
+    void ApplyBlur(float doi)
+    {
+        // Blur is inverted: high DoI (important) = no blur, low DoI (unimportant) = max blur
+        float targetBlur = Mathf.Lerp(maxBlur, 0f, doi);
+        _currentBlur = Mathf.Lerp(_currentBlur, targetBlur, Time.deltaTime * lerpSpeed);
+
+        _material.SetFloat(BlurID, _currentBlur);
+    }
+
+    void ApplyOutline(float doi)
+    {
+        // Outline direct: high DoI (important) = max outline, low DoI (unimportant) = no outline
+        float targetOutlineWidth = Mathf.Lerp(0f, maxOutlineWidth, doi);
+        _currentOutlineWidth = Mathf.Lerp(_currentOutlineWidth, targetOutlineWidth, Time.deltaTime * lerpSpeed);
+
+        _material.SetFloat(OutlineWidthID, _currentOutlineWidth);
+        _material.SetColor(OutlineColorID, outlineColor);
     }
 }

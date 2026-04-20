@@ -80,5 +80,11 @@ public class IARInteractionDatabase : MonoBehaviour
         }
     }
 
+    /// Get a part by its registered name
+    public IARPart GetPart(string itemName)
+    {
+        return _parts.TryGetValue(itemName, out var part) ? part : null;
+    }
+
     string TriggerKey(string item, string state) => $"{item}|{state}";
 }

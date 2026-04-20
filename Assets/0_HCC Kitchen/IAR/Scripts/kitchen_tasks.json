@@ -1,0 +1,546 @@
+{
+  "recipes": [
+    {
+      "id": 1,
+      "name": "Chopped Onion Salad",
+      "description": "A fresh salad with chopped onions, tomatoes, and lettuce",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "description": "Grab the knife from the drawer",
+          "objectsUsed": [
+            {
+              "objectName": "Knife",
+              "action": "grab"
+            }
+          ]
+        },
+        {
+          "stepNumber": 2,
+          "description": "Place the onion on the chopping board",
+          "objectsUsed": [
+            {
+              "objectName": "Onion",
+              "action": "place"
+            },
+            {
+              "objectName": "ChoppingBoard",
+              "action": "use_as_surface"
+            }
+          ]
+        },
+        {
+          "stepNumber": 3,
+          "description": "Chop the onion into small pieces",
+          "objectsUsed": [
+            {
+              "objectName": "Knife",
+              "action": "chop"
+            },
+            {
+              "objectName": "Onion",
+              "action": "chop"
+            }
+          ]
+        },
+        {
+          "stepNumber": 4,
+          "description": "Place the tomato on the chopping board",
+          "objectsUsed": [
+            {
+              "objectName": "Tomato",
+              "action": "place"
+            }
+          ]
+        },
+        {
+          "stepNumber": 5,
+          "description": "Chop the tomato into small pieces",
+          "objectsUsed": [
+            {
+              "objectName": "Knife",
+              "action": "chop"
+            },
+            {
+              "objectName": "Tomato",
+              "action": "chop"
+            }
+          ]
+        },
+        {
+          "stepNumber": 6,
+          "description": "Place lettuce leaves in the salad bowl",
+          "objectsUsed": [
+            {
+              "objectName": "Lettuce",
+              "action": "place"
+            },
+            {
+              "objectName": "SaladBowl",
+              "action": "fill"
+            }
+          ]
+        },
+        {
+          "stepNumber": 7,
+          "description": "Add the chopped onion to the bowl",
+          "objectsUsed": [
+            {
+              "objectName": "Onion",
+              "action": "add_to_bowl"
+            }
+          ]
+        },
+        {
+          "stepNumber": 8,
+          "description": "Add the chopped tomato to the bowl",
+          "objectsUsed": [
+            {
+              "objectName": "Tomato",
+              "action": "add_to_bowl"
+            }
+          ]
+        },
+        {
+          "stepNumber": 9,
+          "description": "Pour olive oil over the salad",
+          "objectsUsed": [
+            {
+              "objectName": "OliveOil",
+              "action": "pour"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Simple Pasta",
+      "description": "Pasta with tomato sauce and basil",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "description": "Fill the pot with water from the tap",
+          "objectsUsed": [
+            {
+              "objectName": "Pot",
+              "action": "fill_with_water"
+            }
+          ]
+        },
+        {
+          "stepNumber": 2,
+          "description": "Place the pot on the stove and heat it",
+          "objectsUsed": [
+            {
+              "objectName": "Pot",
+              "action": "place"
+            },
+            {
+              "objectName": "Stove",
+              "action": "heat"
+            }
+          ]
+        },
+        {
+          "stepNumber": 3,
+          "description": "Wait for the water to boil",
+          "objectsUsed": [
+            {
+              "objectName": "Water",
+              "action": "boil"
+            }
+          ]
+        },
+        {
+          "stepNumber": 4,
+          "description": "Add salt to the boiling water",
+          "objectsUsed": [
+            {
+              "objectName": "Salt",
+              "action": "add"
+            },
+            {
+              "objectName": "Water",
+              "action": "season"
+            }
+          ]
+        },
+        {
+          "stepNumber": 5,
+          "description": "Pour the pasta into the pot",
+          "objectsUsed": [
+            {
+              "objectName": "Pasta",
+              "action": "pour"
+            }
+          ]
+        },
+        {
+          "stepNumber": 6,
+          "description": "Grab a tomato and place it on the chopping board",
+          "objectsUsed": [
+            {
+              "objectName": "Tomato",
+              "action": "grab_and_place"
+            },
+            {
+              "objectName": "ChoppingBoard",
+              "action": "use_as_surface"
+            }
+          ]
+        },
+        {
+          "stepNumber": 7,
+          "description": "Chop the tomato with the knife",
+          "objectsUsed": [
+            {
+              "objectName": "Knife",
+              "action": "chop"
+            },
+            {
+              "objectName": "Tomato",
+              "action": "chop"
+            }
+          ]
+        },
+        {
+          "stepNumber": 8,
+          "description": "Add chopped tomato to a pan with olive oil and heat",
+          "objectsUsed": [
+            {
+              "objectName": "Tomato",
+              "action": "add_to_pan"
+            },
+            {
+              "objectName": "Pan",
+              "action": "heat"
+            },
+            {
+              "objectName": "OliveOil",
+              "action": "add"
+            }
+          ]
+        },
+        {
+          "stepNumber": 9,
+          "description": "Drain the pasta and add it to the sauce",
+          "objectsUsed": [
+            {
+              "objectName": "Pasta",
+              "action": "drain"
+            },
+            {
+              "objectName": "Pan",
+              "action": "add_pasta"
+            }
+          ]
+        },
+        {
+          "stepNumber": 10,
+          "description": "Garnish with fresh basil and serve",
+          "objectsUsed": [
+            {
+              "objectName": "Basil",
+              "action": "garnish"
+            },
+            {
+              "objectName": "Plate",
+              "action": "serve"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Vegetable Stir Fry",
+      "description": "Quick stir fried vegetables with soy sauce",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "description": "Grab the knife and place a carrot on the chopping board",
+          "objectsUsed": [
+            {
+              "objectName": "Knife",
+              "action": "grab"
+            },
+            {
+              "objectName": "Carrot",
+              "action": "place"
+            },
+            {
+              "objectName": "ChoppingBoard",
+              "action": "use_as_surface"
+            }
+          ]
+        },
+        {
+          "stepNumber": 2,
+          "description": "Chop the carrot into thin slices",
+          "objectsUsed": [
+            {
+              "objectName": "Knife",
+              "action": "chop"
+            },
+            {
+              "objectName": "Carrot",
+              "action": "slice"
+            }
+          ]
+        },
+        {
+          "stepNumber": 3,
+          "description": "Place an onion on the chopping board and chop it",
+          "objectsUsed": [
+            {
+              "objectName": "Onion",
+              "action": "place"
+            },
+            {
+              "objectName": "Knife",
+              "action": "chop"
+            }
+          ]
+        },
+        {
+          "stepNumber": 4,
+          "description": "Place broccoli on the chopping board and cut into florets",
+          "objectsUsed": [
+            {
+              "objectName": "Broccoli",
+              "action": "place"
+            },
+            {
+              "objectName": "Knife",
+              "action": "cut"
+            }
+          ]
+        },
+        {
+          "stepNumber": 5,
+          "description": "Heat oil in the wok on the stove",
+          "objectsUsed": [
+            {
+              "objectName": "OilBottle",
+              "action": "pour"
+            },
+            {
+              "objectName": "Wok",
+              "action": "heat"
+            },
+            {
+              "objectName": "Stove",
+              "action": "heat"
+            }
+          ]
+        },
+        {
+          "stepNumber": 6,
+          "description": "Add the chopped onion to the hot wok",
+          "objectsUsed": [
+            {
+              "objectName": "Onion",
+              "action": "add_to_wok"
+            }
+          ]
+        },
+        {
+          "stepNumber": 7,
+          "description": "Add the carrot slices and stir fry",
+          "objectsUsed": [
+            {
+              "objectName": "Carrot",
+              "action": "add_to_wok"
+            },
+            {
+              "objectName": "Wok",
+              "action": "stir_fry"
+            }
+          ]
+        },
+        {
+          "stepNumber": 8,
+          "description": "Add the broccoli florets and continue stirring",
+          "objectsUsed": [
+            {
+              "objectName": "Broccoli",
+              "action": "add_to_wok"
+            }
+          ]
+        },
+        {
+          "stepNumber": 9,
+          "description": "Pour soy sauce over the vegetables",
+          "objectsUsed": [
+            {
+              "objectName": "SoySauce",
+              "action": "pour"
+            }
+          ]
+        },
+        {
+          "stepNumber": 10,
+          "description": "Serve the stir fry on a plate",
+          "objectsUsed": [
+            {
+              "objectName": "Plate",
+              "action": "serve"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Tomato Soup",
+      "description": "Creamy tomato soup with fresh herbs",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "description": "Place tomatoes on the chopping board",
+          "objectsUsed": [
+            {
+              "objectName": "Tomato",
+              "action": "place"
+            },
+            {
+              "objectName": "ChoppingBoard",
+              "action": "use_as_surface"
+            }
+          ]
+        },
+        {
+          "stepNumber": 2,
+          "description": "Chop the tomatoes with the knife",
+          "objectsUsed": [
+            {
+              "objectName": "Knife",
+              "action": "chop"
+            },
+            {
+              "objectName": "Tomato",
+              "action": "chop"
+            }
+          ]
+        },
+        {
+          "stepNumber": 3,
+          "description": "Peel and chop an onion",
+          "objectsUsed": [
+            {
+              "objectName": "Onion",
+              "action": "peel_and_chop"
+            },
+            {
+              "objectName": "Knife",
+              "action": "chop"
+            }
+          ]
+        },
+        {
+          "stepNumber": 4,
+          "description": "Heat oil in a pot on the stove",
+          "objectsUsed": [
+            {
+              "objectName": "OilBottle",
+              "action": "pour"
+            },
+            {
+              "objectName": "Pot",
+              "action": "heat"
+            },
+            {
+              "objectName": "Stove",
+              "action": "heat"
+            }
+          ]
+        },
+        {
+          "stepNumber": 5,
+          "description": "Sauté the chopped onion in the pot",
+          "objectsUsed": [
+            {
+              "objectName": "Onion",
+              "action": "sauté"
+            },
+            {
+              "objectName": "Pot",
+              "action": "cook"
+            }
+          ]
+        },
+        {
+          "stepNumber": 6,
+          "description": "Add the chopped tomatoes to the pot",
+          "objectsUsed": [
+            {
+              "objectName": "Tomato",
+              "action": "add_to_pot"
+            }
+          ]
+        },
+        {
+          "stepNumber": 7,
+          "description": "Add vegetable broth and salt to the pot",
+          "objectsUsed": [
+            {
+              "objectName": "VegetableBroth",
+              "action": "pour"
+            },
+            {
+              "objectName": "Salt",
+              "action": "add"
+            }
+          ]
+        },
+        {
+          "stepNumber": 8,
+          "description": "Simmer the soup for 15 minutes",
+          "objectsUsed": [
+            {
+              "objectName": "Pot",
+              "action": "simmer"
+            },
+            {
+              "objectName": "Stove",
+              "action": "simmer"
+            }
+          ]
+        },
+        {
+          "stepNumber": 9,
+          "description": "Add cream to the soup and stir",
+          "objectsUsed": [
+            {
+              "objectName": "Cream",
+              "action": "add"
+            },
+            {
+              "objectName": "Pot",
+              "action": "stir"
+            }
+          ]
+        },
+        {
+          "stepNumber": 10,
+          "description": "Ladle the soup into bowls and garnish with basil",
+          "objectsUsed": [
+            {
+              "objectName": "Ladle",
+              "action": "serve"
+            },
+            {
+              "objectName": "Bowl",
+              "action": "fill"
+            },
+            {
+              "objectName": "Basil",
+              "action": "garnish"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

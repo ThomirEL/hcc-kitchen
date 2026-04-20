@@ -26,6 +26,7 @@
   <Project Path="Autodesk.Fbx.csproj" />
   <Project Path="Unity.Burst.CodeGen.csproj" />
   <Project Path="Unity.XR.AndroidOpenXR.csproj" />
+  <Project Path="LineworkLite.csproj" />
   <Project Path="Unity.XR.ARFoundation.csproj" />
   <Project Path="Unity.PerformanceTesting.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.StarterAssets.csproj" />
@@ -52,6 +53,7 @@
   <Project Path="Unity.XR.OpenXR.Features.MetaQuestSupport.Editor.csproj" />
   <Project Path="Unity.InputSystem.ForUI.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.CodeSamples.Tests.csproj" />
+  <Project Path="LineworkLite.Editor.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Analytics.Hooks.Editor.csproj" />
   <Project Path="Unity.XR.Management.csproj" />
   <Project Path="Unity.Mathematics.Editor.csproj" />
