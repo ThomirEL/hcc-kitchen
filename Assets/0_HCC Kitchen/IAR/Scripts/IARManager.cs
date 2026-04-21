@@ -39,6 +39,13 @@ public class IARManager : MonoBehaviour
     [Tooltip("Intent for instance if you pick up a knife, a chopping board is more interesting")]
     static public bool Intent = true;
 
+    [Header("Shader Calculations - Which effects should the DOI shader apply?")]
+    static public bool ShaderDesaturation = true;
+    static public bool ShaderDarkening = true;
+    static public bool ShaderSaturationBoost = true;
+    static public bool ShaderBrightnessBoost = true;
+    static public bool ShaderContrast = true;
+    static public bool ShaderEmission = true;
 
     [Header("Falloff")]
     public float gaussianSigma = 3f;
@@ -49,6 +56,23 @@ public class IARManager : MonoBehaviour
     {
         Instance = this;
         allParts = new List<IARPart>(FindObjectsOfType<IARPart>());
+        UpdateShaderSettings();
+    }
+
+    void OnValidate()
+    {
+        // Update shader settings whenever values change in the editor
+        UpdateShaderSettings();
+    }
+
+    private static void UpdateShaderSettings()
+    {
+        Shader.SetGlobalFloat("_EnableDesaturation", ShaderDesaturation ? 1f : 0f);
+        Shader.SetGlobalFloat("_EnableDarkening", ShaderDarkening ? 1f : 0f);
+        Shader.SetGlobalFloat("_EnableSaturationBoost", ShaderSaturationBoost ? 1f : 0f);
+        Shader.SetGlobalFloat("_EnableBrightnessBoost", ShaderBrightnessBoost ? 1f : 0f);
+        Shader.SetGlobalFloat("_EnableContrast", ShaderContrast ? 1f : 0f);
+        Shader.SetGlobalFloat("_EnableEmission", ShaderEmission ? 1f : 0f);
     }
 
 
