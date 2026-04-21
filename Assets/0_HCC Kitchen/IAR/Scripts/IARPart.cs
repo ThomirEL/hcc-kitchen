@@ -146,25 +146,6 @@ public class IARPart : MonoBehaviour
         Debug.Log($"  → New DOI: {currentDoI}");
     }
     
-
-    private IEnumerator LerpContribution(string key, float duration)
-    {
-        float time = 0f;
-
-        while (time < duration)
-        {
-            float t = time / duration;
-            float value = Mathf.Lerp(0f, 1f, t);
-
-            SetContribution(key, value);
-
-            time += Time.deltaTime;
-            yield return null;
-        }
-
-        SetContribution(key, 1f);
-    }
-    
     public void ClearContribution(string key)
     {
         _contributions.Remove(key);

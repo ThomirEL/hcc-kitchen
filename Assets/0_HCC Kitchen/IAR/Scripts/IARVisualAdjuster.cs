@@ -51,8 +51,6 @@ public class IARVisualAdjuster : MonoBehaviour
         float doi = _part.currentDoI;
 
         if (useTransparency) ApplyTransparency(doi);
-        if (useBlur) ApplyBlur(doi);
-        if (useOutline) ApplyOutline(doi);
     }
 
     void ApplyTransparency(float doi)
@@ -67,22 +65,4 @@ public class IARVisualAdjuster : MonoBehaviour
         _material.color = color;
     }
 
-    void ApplyBlur(float doi)
-    {
-        // Blur is inverted: high DoI (important) = no blur, low DoI (unimportant) = max blur
-        float targetBlur = Mathf.Lerp(maxBlur, 0f, doi);
-        _currentBlur = Mathf.Lerp(_currentBlur, targetBlur, Time.deltaTime * lerpSpeed);
-
-        _material.SetFloat(BlurID, _currentBlur);
-    }
-
-    void ApplyOutline(float doi)
-    {
-        // Outline direct: high DoI (important) = max outline, low DoI (unimportant) = no outline
-        float targetOutlineWidth = Mathf.Lerp(0f, maxOutlineWidth, doi);
-        _currentOutlineWidth = Mathf.Lerp(_currentOutlineWidth, targetOutlineWidth, Time.deltaTime * lerpSpeed);
-
-        _material.SetFloat(OutlineWidthID, _currentOutlineWidth);
-        _material.SetColor(OutlineColorID, outlineColor);
-    }
 }
