@@ -2,7 +2,6 @@ Shader "Custom/URP_DOI_Master"
 {
     Properties
     {
-        // ── Standard URP Lit properties ───────────────────────────────────
         _BaseMap        ("Albedo (High Res)",    2D)            = "white" {}
         _BaseColor      ("Base Color",           Color)         = (1,1,1,1)
         _Metallic       ("Metallic",             Range(0,1))    = 0.0
@@ -12,7 +11,6 @@ Shader "Custom/URP_DOI_Master"
         _OcclusionMap   ("Occlusion",            2D)            = "white" {}
         _OcclusionStrength("Occlusion Strength", Range(0,1))    = 1.0
 
-        // ── DOI-specific ──────────────────────────────────────────────────
         _LowResMap      ("Low Res Texture",      2D)            = "gray" {}
         _DOI            ("Degree of Interest",   Range(0,1))    = 0.75
 
@@ -27,18 +25,14 @@ Shader "Custom/URP_DOI_Master"
         _MaxEmission    ("Max Emission",         Range(0,2))    = 0.3
         _BlurStrength   ("Blur Strength",        Range(0,0.02)) = 0.005
 
-        // ── Toggle floats (set by IARManager) ────────────────────────────
-        _EnableDesaturation  ("Enable Desaturation",   Float) = 1
-        _EnableDarkening     ("Enable Darkening",      Float) = 1
-        _EnableSaturationBoost("Enable Sat Boost",     Float) = 1
-        _EnableBrightnessBoost("Enable Bright Boost",  Float) = 1
-        _EnableContrast      ("Enable Contrast",       Float) = 1
-        _EnableEmission      ("Enable Emission",       Float) = 0
+        // ── Toggles are intentionally NOT in Properties ───────────────────
+        // They are set via Shader.SetGlobalFloat from IARManager.
+        // Putting them here would create per-material overrides that
+        // silently shadow the globals, making SetGlobalFloat have no effect.
     }
 
     SubShader
     {
-        // Transparent queue so alpha blending works
         Tags
         {
             "RenderPipeline"="UniversalPipeline"
@@ -51,7 +45,6 @@ Shader "Custom/URP_DOI_Master"
             Name "ForwardLit"
             Tags { "LightMode"="UniversalForward" }
 
-            // Alpha blending — required for transparency
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
             Cull Back
@@ -61,7 +54,6 @@ Shader "Custom/URP_DOI_Master"
             #pragma vertex   vert
             #pragma fragment frag
 
-            // URP Lit feature keywords — needed for lighting to work correctly
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
@@ -72,12 +64,9 @@ Shader "Custom/URP_DOI_Master"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceInput.hlsl"
 
-            // ── Texture / sampler declarations ────────────────────────────
-            // After — _BaseMap and _BumpMap are already declared by SurfaceInput.hlsl
             TEXTURE2D(_LowResMap);     SAMPLER(sampler_LowResMap);
             TEXTURE2D(_OcclusionMap);  SAMPLER(sampler_OcclusionMap);
 
-            // ── CBUFFER — must match property names exactly ───────────────
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 float4 _LowResMap_ST;
@@ -96,16 +85,18 @@ Shader "Custom/URP_DOI_Master"
                 float4 _EmissionColor;
                 float  _MaxEmission;
                 float  _BlurStrength;
-
-                float  _EnableDesaturation;
-                float  _EnableDarkening;
-                float  _EnableSaturationBoost;
-                float  _EnableBrightnessBoost;
-                float  _EnableContrast;
-                float  _EnableEmission;
             CBUFFER_END
 
-            // ── Vertex input/output ───────────────────────────────────────
+            // Toggles live outside CBUFFER so globals can reach them
+            float _EnableDesaturation;
+            float _EnableDarkening;
+            float _EnableSaturationBoost;
+            float _EnableBrightnessBoost;
+            float _EnableContrast;
+            float _EnableEmission;
+            float _EnableHighResBlend;
+            float _EnableAlpha;
+
             struct Attributes
             {
                 float4 positionOS   : POSITION;
@@ -126,7 +117,6 @@ Shader "Custom/URP_DOI_Master"
                 float  fogFactor    : TEXCOORD5;
             };
 
-            // ── Helpers ───────────────────────────────────────────────────
             float3 RGBToHSV(float3 c)
             {
                 float4 K = float4(0., -1./3., 2./3., -1.);
@@ -153,7 +143,6 @@ Shader "Custom/URP_DOI_Master"
                 return c * 0.25;
             }
 
-            // ── Vertex shader ─────────────────────────────────────────────
             Varyings vert(Attributes v)
             {
                 Varyings o;
@@ -173,25 +162,32 @@ Shader "Custom/URP_DOI_Master"
                 return o;
             }
 
-            // ── Fragment shader ───────────────────────────────────────────
             float4 frag(Varyings i) : SV_Target
             {
                 float doi = saturate(_DOI);
                 float2 uv = i.uv;
 
-                // ── 1. Sample albedo (hi-res vs lo-res blend) ─────────────
-                float4 colHigh = SAMPLE_TEXTURE2D(_BaseMap,   sampler_BaseMap,   uv) * _BaseColor;
-                float4 colLow  = (_BlurStrength > 0.0001
-                                    ? SampleBlurred(uv, _BlurStrength)
-                                    : SAMPLE_TEXTURE2D(_LowResMap, sampler_LowResMap, uv))
-                                 * _BaseColor;
-
-                float4 albedo = lerp(colLow, colHigh, smoothstep(0.0, 0.75, doi));
+                // ── 1. Albedo ─────────────────────────────────────────────
+                // When _EnableHighResBlend is off: always sample high-res, no
+                // lo-res blend — identical to plain URP Lit albedo sampling.
+                float4 albedo;
+                if (_EnableHighResBlend > 0.5)
+                {
+                    float4 colHigh = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+                    float4 colLow  = (_BlurStrength > 0.0001
+                                        ? SampleBlurred(uv, _BlurStrength)
+                                        : SAMPLE_TEXTURE2D(_LowResMap, sampler_LowResMap, uv))
+                                     * _BaseColor;
+                    albedo = lerp(colLow, colHigh, smoothstep(0.0, 0.75, doi));
+                }
+                else
+                {
+                    albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+                }
 
                 // ── 2. Normal map ─────────────────────────────────────────
                 float4 normalSample = SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uv);
                 float3 normalTS     = UnpackNormalScale(normalSample, _BumpScale);
-
                 float3 bitangentWS  = cross(i.normalWS, i.tangentWS.xyz) * i.tangentWS.w;
                 float3x3 TBN        = float3x3(i.tangentWS.xyz, bitangentWS, i.normalWS);
                 float3 normalWS     = normalize(mul(normalTS, TBN));
@@ -201,7 +197,7 @@ Shader "Custom/URP_DOI_Master"
                     SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, uv).g,
                     _OcclusionStrength);
 
-                // ── 4. Build SurfaceData + InputData for URP Lit ──────────
+                // ── 4. URP Lit PBR lighting ───────────────────────────────
                 SurfaceData surfaceData = (SurfaceData)0;
                 surfaceData.albedo      = albedo.rgb;
                 surfaceData.alpha       = albedo.a;
@@ -212,21 +208,19 @@ Shader "Custom/URP_DOI_Master"
                 surfaceData.emission    = 0;
 
                 InputData inputData = (InputData)0;
-                inputData.positionWS        = i.positionWS;
-                inputData.normalWS          = normalWS;
-                inputData.viewDirectionWS   = normalize(GetWorldSpaceViewDir(i.positionWS));
-                inputData.shadowCoord       = TransformWorldToShadowCoord(i.positionWS);
-                inputData.fogCoord          = i.fogFactor;
-                inputData.vertexLighting    = 0;
-                inputData.bakedGI           = SAMPLE_GI(i.lightmapUV, i.vertexSH, normalWS);
+                inputData.positionWS              = i.positionWS;
+                inputData.normalWS                = normalWS;
+                inputData.viewDirectionWS         = normalize(GetWorldSpaceViewDir(i.positionWS));
+                inputData.shadowCoord             = TransformWorldToShadowCoord(i.positionWS);
+                inputData.fogCoord                = i.fogFactor;
+                inputData.vertexLighting          = 0;
+                inputData.bakedGI                 = SAMPLE_GI(i.lightmapUV, i.vertexSH, normalWS);
                 inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(i.positionHCS);
-                inputData.shadowMask        = SAMPLE_SHADOWMASK(i.lightmapUV);
+                inputData.shadowMask              = SAMPLE_SHADOWMASK(i.lightmapUV);
 
-                // ── 5. Full URP Lit lighting ──────────────────────────────
-                // At DOI = 0.75 this is exactly what URP/Lit produces
                 float4 col = UniversalFragmentPBR(inputData, surfaceData);
 
-                // ── 6. DOI effects layered on top ─────────────────────────
+                // ── 5. DOI color effects ──────────────────────────────────
                 float lowFactor = saturate((0.75 - doi) * 4.0);
                 float gray      = dot(col.rgb, float3(0.299, 0.587, 0.114));
 
@@ -259,11 +253,14 @@ Shader "Custom/URP_DOI_Master"
                     col.rgb += _EmissionColor.rgb * emissionIntensity;
                 }
 
-                // ── 7. Alpha: DOI drives fade, fog applied ────────────────
-                // At DOI=0.75: col.a = original alpha (fully opaque if texture has no transparency)
-                // Below 0.75: fades out toward transparent
-                col.a   *= saturate(doi / 0.75);
-                col.rgb  = MixFog(col.rgb, i.fogFactor);
+                // ── 6. Alpha ──────────────────────────────────────────────
+                // _EnableAlpha off → col.a stays exactly as PBR produced it
+                // (fully opaque for solid objects), matching plain URP Lit.
+                // _EnableAlpha on  → fade from 3% at doi=0 to 100% at doi=0.75
+                if (_EnableAlpha > 0.5)
+                    col.a *= lerp(0.03, 1.0, saturate(doi / 0.75));
+
+                col.rgb = MixFog(col.rgb, i.fogFactor);
 
                 return col;
             }
@@ -271,7 +268,6 @@ Shader "Custom/URP_DOI_Master"
             ENDHLSL
         }
 
-        // Shadow caster pass — needed so the object still casts shadows
         UsePass "Universal Render Pipeline/Lit/ShadowCaster"
         UsePass "Universal Render Pipeline/Lit/DepthOnly"
     }

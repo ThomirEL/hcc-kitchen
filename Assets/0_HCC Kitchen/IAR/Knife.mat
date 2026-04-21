@@ -109,7 +109,7 @@ Material:
     - _AlphaToMask: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
-    - _BlurStrength: 0.005
+    - _BlurStrength: 0
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
@@ -121,15 +121,21 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 10
     - _DstBlendAlpha: 10
+    - _EnableBrightnessBoost: 0
+    - _EnableContrast: 0
+    - _EnableDarkening: 0
+    - _EnableDesaturation: 0
+    - _EnableEmission: 0
+    - _EnableSaturationBoost: 0
     - _EnvironmentReflections: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _MaxContrast: 1.5
+    - _MaxContrast: 1.385
     - _MaxEmission: 5
-    - _MaxSaturation: 1
-    - _MaxValue: 1.2
-    - _Metallic: 1
+    - _MaxSaturation: 0
+    - _MaxValue: 0.589
+    - _Metallic: 0.363
     - _MinContrast: 0.5
     - _MinSaturation: 0
     - _MinValue: 0.3
@@ -137,7 +143,7 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Smoothness: 0.5
+    - _Smoothness: 0.303
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1

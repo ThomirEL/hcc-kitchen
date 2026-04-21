@@ -10,42 +10,44 @@ public class IARManager : MonoBehaviour
     public List<IARPart> allParts = new();
 
     [Header("Source Weights")]
-    [Range(0, 2)] static public float gamma1_part = 1f;
-    [Range(0, 2)] static public float gamma2_user = 1f;
+    [Range(0, 2)] public float gamma1_part = 1f;
+    [Range(0, 2)] public float gamma2_user = 1f;
 
     [Header("Part Weights")]
-    [Range(0, 2)] static public float alpha1_intrinsic = 1f;
-    [Range(0, 2)] static public float beta1_relation   = 0.8f;
+    [Range(0, 2)] public float alpha1_intrinsic = 1f;
+    [Range(0, 2)] public float beta1_relation   = 0.8f;
 
     [Header("User Weights")]
-    [Range(0, 2)] static public float alpha2_intent = 1f;
-    [Range(0, 2)] static public float beta2_action  = 0.8f;
+    [Range(0, 2)] public float alpha2_intent = 1f;
+    [Range(0, 2)] public float beta2_action  = 0.8f;
 
     [Header("DOI ranges")]
-    static public float COMMON_MIN = 0.0f;
-    static public float COMMON_MAX = 0.3f;
-    static public float DANGER_MIN = 0.1f;
-    static public float DANGER_MAX = 0.8f;
+    public float COMMON_MIN = 0.0f;
+    public float COMMON_MAX = 0.3f;
+    public float DANGER_MIN = 0.1f;
+    public float DANGER_MAX = 0.8f;
 
-    static public int STEPS_IN_FUTURE = 5;
+    public int STEPS_IN_FUTURE = 5;
 
     [Header("What aspects should affect the DOI?")]
-    static public bool Commonality = true;
-    static public bool CurrentTaskRelevance = true;
-    static public bool FutureTaskRelevance = true;
-    static public bool Danger = true;
-    static public bool Intrinsic = true;
+    public bool Commonality = true;
+    public bool CurrentTaskRelevance = true;
+    public bool FutureTaskRelevance = true;
+    public bool Danger = true;
+    public bool Intrinsic = true;
 
     [Tooltip("Intent for instance if you pick up a knife, a chopping board is more interesting")]
-    static public bool Intent = true;
+    public bool Intent = true;
 
     [Header("Shader Calculations - Which effects should the DOI shader apply?")]
-    static public bool ShaderDesaturation = true;
-    static public bool ShaderDarkening = true;
-    static public bool ShaderSaturationBoost = true;
-    static public bool ShaderBrightnessBoost = true;
-    static public bool ShaderContrast = true;
-    static public bool ShaderEmission = true;
+    public bool ShaderDesaturation = true;
+    public bool ShaderDarkening = true;
+    public bool ShaderSaturationBoost = true;
+    public bool ShaderBrightnessBoost = true;
+    public bool ShaderContrast = true;
+    public bool ShaderEmission = true;
+    public bool ShaderHighResBlend = true;
+    public bool ShaderAlpha = true;
 
     [Header("Falloff")]
     public float gaussianSigma = 3f;
@@ -56,6 +58,11 @@ public class IARManager : MonoBehaviour
     {
         Instance = this;
         allParts = new List<IARPart>(FindObjectsOfType<IARPart>());
+    }
+
+    void Start()
+    {
+        // Called after all Awake()s — materials are guaranteed loaded now
         UpdateShaderSettings();
     }
 
@@ -65,7 +72,12 @@ public class IARManager : MonoBehaviour
         UpdateShaderSettings();
     }
 
-    private static void UpdateShaderSettings()
+
+    /// <summary>
+    /// Updates all shader global variables with current toggle values.
+    /// Call this at runtime after changing any ShaderXxx settings.
+    /// </summary>
+    public void UpdateShaderSettings()
     {
         Shader.SetGlobalFloat("_EnableDesaturation", ShaderDesaturation ? 1f : 0f);
         Shader.SetGlobalFloat("_EnableDarkening", ShaderDarkening ? 1f : 0f);
@@ -73,50 +85,11 @@ public class IARManager : MonoBehaviour
         Shader.SetGlobalFloat("_EnableBrightnessBoost", ShaderBrightnessBoost ? 1f : 0f);
         Shader.SetGlobalFloat("_EnableContrast", ShaderContrast ? 1f : 0f);
         Shader.SetGlobalFloat("_EnableEmission", ShaderEmission ? 1f : 0f);
+        Shader.SetGlobalFloat("_EnableHighResBlend", ShaderHighResBlend ? 1f : 0f);
+        Shader.SetGlobalFloat("_EnableAlpha", ShaderAlpha ? 1f : 0f);
     }
 
-
-    static public float calculateDOI(IARPart part)
-    {
-        float DOI = 0f;
-        if (Commonality)
-            DOI += CalculateCommonality(part);
-        if (Danger)
-            DOI += CalculateDanger(part);
-        if (Intrinsic)
-            DOI += CalcIntrinsic(part);
-        if (Intent)
-            DOI += CalcIntent(part);
-        if (CurrentTaskRelevance)
-            DOI = DOI;
-        if (FutureTaskRelevance)
-            DOI = DOI;
-        return Mathf.Clamp01(DOI);
-    }
-
-    static private float CalculateCommonality(IARPart part)
-    {
-        float C = part.HowCommon;
-        return Mathf.Lerp(COMMON_MIN, COMMON_MAX, C);
-    }
-
-    static private float CalculateDanger(IARPart part)
-    {
-        float D = part.HowDangerous;
-        return Mathf.Lerp(DANGER_MIN, DANGER_MAX, D);
-    }
-
-    static private float CalcIntrinsic(IARPart part)
-    {
-        float I = part.intrinsicInterest;
-        return alpha1_intrinsic * I;
-    }
-
-    static private float CalcIntent(IARPart part)
-    {
-        float T = part.GetCombinedIntentInterest();
-        return alpha2_intent * T;
-    }
+    
 
     // Call this from IARItem so allParts stays up to date automatically
     public void RegisterPart(IARPart part)

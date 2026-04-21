@@ -40,17 +40,17 @@ public class IARVisualAdjuster : MonoBehaviour
 
     void Update()
     {
-        // Lazy initialize: wait for renderer to be assigned on IARPart
-        if (_material == null && _part.cachedRenderer != null)
-        {
-            _renderer = _part.cachedRenderer;
-            _material = _renderer.material;
-        }
+        // // Lazy initialize: wait for renderer to be assigned on IARPart
+        // if (_material == null && _part.cachedRenderer != null)
+        // {
+        //     _renderer = _part.cachedRenderer;
+        //     _material = _renderer.material;
+        // }
 
-        if (_material == null) return;
-        float doi = _part.currentDoI;
+        // if (_material == null) return;
+        // float doi = _part.currentDoI;
 
-        if (useTransparency) ApplyTransparency(doi);
+        // if (useTransparency) ApplyTransparency(doi);
     }
 
     void ApplyTransparency(float doi)

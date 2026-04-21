@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Collections;
 using System;
+using UnityEditor;
 
 public class IARPart : MonoBehaviour
 {
@@ -86,11 +87,32 @@ public class IARPart : MonoBehaviour
     [SerializeField] private string selfContributionKey;
     [SerializeField] private float selfContrubutionDuration;
 
+    IARManager manager;
+
     void Awake()
     {
         cachedRenderer = GetComponent<Renderer>();
         cachedCollider = GetComponent<Collider>();
+        GetManager();
         calculateThisDOI("Awake");
+    }
+
+    /// <summary>
+    /// Gets or finds the IARManager instance. Handles lazy initialization.
+    /// </summary>
+    private void GetManager()
+    {
+        if (manager != null)
+            return;
+
+        manager = IARManager.Instance;
+        
+        if (manager == null)
+        {
+            manager = FindObjectOfType<IARManager>();
+            if (manager == null)
+                Debug.LogError($"IARPart '{name}' cannot find IARManager in scene!");
+        }
     }
 
     /// Any system sets its own interest contribution independently.
@@ -133,17 +155,79 @@ public class IARPart : MonoBehaviour
         HowDangerous = _dangerLevelToRise;
     }
 
-    void Update()
-    {
-        //IARManager.calculateDOI(this);
-    }
 
     private void calculateThisDOI(string changedAspect = null)
     {
         Debug.Log($"Calculating DOI for {name} (changed aspect: {changedAspect})");
         Debug.Log($"  Commonality: {HowCommon}, Danger: {HowDangerous}, Intrinsic: {intrinsicInterest}, InCurrentStep: {IsInCurrentStep}, StepsInToFuture: {StepsInToFuture}");
-        currentDoI = IARManager.calculateDOI(this);
+        currentDoI = CalculateDOI();
         Debug.Log($"  → New DOI: {currentDoI}");
+        
+        if (cachedRenderer != null && cachedRenderer.material != null)
+        {
+            cachedRenderer.material.SetFloat("_DOI", currentDoI);
+        }
+        else
+        {
+            Debug.LogWarning($"IARPart '{name}' cannot update material - Renderer or material not found!");
+        }
+    }
+
+    public float CalculateDOI()
+    {
+        GetManager();
+        
+        if (manager == null)
+        {
+            Debug.LogError($"IARPart '{name}' cannot calculate DOI - IARManager not found!");
+            return 0f;
+        }
+        
+        float DOI = 0f;
+
+        if (manager.Commonality)
+            DOI += CalculateCommonality();
+        
+        if (manager.Danger)
+            DOI += CalculateDanger();
+        
+        if (manager.Intrinsic)
+            DOI += CalculateIntrinsic();
+        
+        if (manager.Intent)
+            DOI += CalculateIntent();
+        
+        if (manager.CurrentTaskRelevance)
+            DOI = DOI;
+        
+        if (manager.FutureTaskRelevance)
+            DOI = DOI;
+
+        return Mathf.Clamp01(DOI);
+    }
+
+    private float CalculateDanger()
+    {
+        float D = HowDangerous;
+        return Mathf.Lerp(manager.DANGER_MIN, manager.DANGER_MAX, D);
+    }
+
+    private float CalculateIntrinsic()
+    {
+        float I = intrinsicInterest;
+        return manager.alpha1_intrinsic * I;
+    }
+
+    private float CalculateCommonality()
+    {
+        float C = HowCommon;
+        return Mathf.Lerp(manager.COMMON_MIN, manager.COMMON_MAX, C);
+    }
+
+    private float CalculateIntent()
+    {
+        float T = GetCombinedIntentInterest();
+        return manager.alpha2_intent * T;
     }
     
     public void ClearContribution(string key)
