@@ -89,12 +89,30 @@ public class IARPart : MonoBehaviour
 
     IARManager manager;
 
+    TaskManager taskManager;
+
     void Awake()
     {
         cachedRenderer = GetComponent<Renderer>();
         cachedCollider = GetComponent<Collider>();
         GetManager();
+        GetTaskManager();
         calculateThisDOI("Awake");
+    }
+
+    private void GetTaskManager()
+    {
+        if (taskManager != null)
+            return;
+
+        taskManager = TaskManager.Instance;
+        
+        if (taskManager == null)
+        {
+            taskManager = FindObjectOfType<TaskManager>();
+            if (taskManager == null)
+                Debug.LogError($"IARPart '{name}' cannot find TaskManager in scene!");
+        }
     }
 
     /// <summary>
@@ -198,7 +216,7 @@ public class IARPart : MonoBehaviour
             DOI += CalculateIntent();
         
         if (manager.CurrentTaskRelevance)
-            DOI = DOI;
+            DOI += AddDOIForCurrentStep();
         
         if (manager.FutureTaskRelevance)
             DOI = DOI;
@@ -247,5 +265,103 @@ public class IARPart : MonoBehaviour
     public float GetContribution(string key)
     {
         return _contributions.TryGetValue(key, out float v) ? v : 0f;
+    }
+
+    /// <summary>
+    /// Checks which recipe and step are currently active and adds DOI contribution 
+    /// to this item if it's used in the current step.
+    /// </summary>
+    public float AddDOIForCurrentStep()
+    {
+        GetTaskManager();
+        if (taskManager == null)
+        {
+            Debug.LogWarning($"IARPart '{name}' cannot find TaskManager!");
+            return 0f;
+        }
+
+        // Get current step objects
+        List<string> currentStepObjects = taskManager.GetCurrentStepObjects();
+        
+        // Check if this part's name matches any object in the current step
+        if (currentStepObjects.Contains(gameObject.name))
+        {
+            // Add contribution for current step
+            if (log) Debug.Log($"{gameObject.name} is used in current step: {taskManager.CurrentStep.description}");
+            return 0.5f; // This value can be adjusted or calculated based on importance in the step
+        }
+        return 0f;
+    }
+
+    /// <summary>
+    /// Looks ahead at future steps (up to n steps) and adds diminishing DOI contributions.
+    /// The next step gets maximum bonus, and it decreases exponentially for steps further ahead.
+    /// </summary>
+    /// <param name="stepsAhead">Number of steps to look ahead (e.g., 5 for next 5 steps)</param>
+    public void AddDOIForFutureSteps(int stepsAhead = 5)
+    {
+        TaskManager taskManager = TaskManager.Instance;
+        if (taskManager == null)
+        {
+            Debug.LogWarning($"IARPart '{name}' cannot find TaskManager!");
+            return;
+        }
+
+        KitchenTask currentRecipe = taskManager.CurrentRecipe;
+        int currentStepIndex = taskManager.CurrentStep.stepNumber - 1; // Convert to 0-based index
+        
+        float totalFutureDOI = 0f;
+        
+        // Look through future steps
+        for (int i = 1; i <= stepsAhead && (currentStepIndex + i) < currentRecipe.steps.Count; i++)
+        {
+            TaskStep futureStep = currentRecipe.steps[currentStepIndex + i];
+            List<string> futureStepObjects = new List<string>();
+            
+            foreach (var obj in futureStep.objectsUsed)
+            {
+                futureStepObjects.Add(obj.objectName);
+            }
+            
+            // Check if this part is used in the future step
+            if (futureStepObjects.Contains(gameObject.name))
+            {
+                // Calculate falloff: next step (i=1) gets 1.0, then decreases exponentially
+                // Using gaussian-like falloff: e^(-i^2 / (2 * sigma^2))
+                float distanceFactor = Mathf.Exp(-i * i / (2f * manager.gaussianSigma * manager.gaussianSigma));
+                totalFutureDOI += distanceFactor;
+                
+                if (log) Debug.Log($"{gameObject.name} will be used in {i} steps: {futureStep.description} (bonus: {distanceFactor})");
+            }
+        }
+        
+        if (totalFutureDOI > 0f)
+        {
+            // Clamp total to 0-1 and apply intent weight
+            totalFutureDOI = Mathf.Clamp01(totalFutureDOI);
+            SetContribution("recipe.futureSteps", manager.alpha2_intent * totalFutureDOI);
+        }
+        else
+        {
+            ClearContribution("recipe.futureSteps");
+        }
+    }
+
+    /// <summary>
+    /// Calculates DOI bonus for an item based on its distance from the current step.
+    /// Distance of 0 = current step (gets full bonus), 1 = next step, etc.
+    /// Returns higher values for closer steps and lower values for distant steps.
+    /// </summary>
+    /// <param name="stepDistance">Distance in steps from current (0 = current, 1 = next, etc.)</param>
+    /// <returns>DOI bonus value between 0 and 1</returns>
+    private float CalculateStepDistanceFalloff(int stepDistance)
+    {
+        if (stepDistance == 0)
+            return 1.0f; // Current step gets full value
+        
+        // Gaussian falloff: e^(-d^2 / (2 * sigma^2))
+        // sigma from manager (default 3) controls how quickly bonus decreases
+        float falloff = Mathf.Exp(-stepDistance * stepDistance / (2f * manager.gaussianSigma * manager.gaussianSigma));
+        return falloff;
     }
 }

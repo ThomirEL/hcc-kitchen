@@ -10,6 +10,8 @@ TagManager:
   - fridge_item
   - kitchen_item
   - locations
+  - Tomato
+  - Chunk
   layers:
   - Default
   - TransparentFX

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.InputSystem;
 
 [System.Serializable]
 public class KitchenTask
@@ -60,6 +61,12 @@ public class TaskManager : MonoBehaviour
         DisplayCurrentStep();
     }
 
+    void Start()
+    {
+        // Called after all Awake() methods - IARPart components are now initialized
+        UpdateCurrentStepParts();
+    }
+
     void LoadTasks()
     {
         if (taskJsonFile == null)
@@ -89,6 +96,37 @@ public class TaskManager : MonoBehaviour
         Debug.Log($"Current Step: {step.description}");
     }
 
+    /// <summary>
+    /// Updates IARPart components based on the current step.
+    /// Sets IsInCurrentStep to true for objects used in current step,
+    /// and false for all other IARPart objects.
+    /// Matches objects by substring - e.g. "broccoli" matches "broccoli" and "broccoli chunk".
+    /// </summary>
+    private void UpdateCurrentStepParts()
+    {
+        // Get all IARPart components in the scene
+        IARPart[] allParts = FindObjectsOfType<IARPart>();
+        
+        // Get object names used in current step
+        List<string> currentStepObjectNames = GetCurrentStepObjects();
+        
+        // Update each IARPart
+        foreach (IARPart part in allParts)
+        {
+            // Check if this part's game object name contains any of the required object names
+            bool isInStep = false;
+            foreach (string objectName in currentStepObjectNames)
+            {
+                if (part.gameObject.name.Contains(objectName))
+                {
+                    isInStep = true;
+                    break;
+                }
+            }
+            part.IsInCurrentStep = isInStep;
+        }
+    }
+
     public void CompleteStep()
     {
         _currentStepIndex++;
@@ -100,6 +138,16 @@ public class TaskManager : MonoBehaviour
         }
 
         DisplayCurrentStep();
+        UpdateCurrentStepParts();
+    }
+
+    void Update()
+    {
+        // For testing: Press Space to complete current step
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        {
+            CompleteStep();
+        }
     }
 
     public void CompleteRecipe()
@@ -115,6 +163,7 @@ public class TaskManager : MonoBehaviour
         }
 
         DisplayCurrentStep();
+        UpdateCurrentStepParts();
     }
 
     public List<string> GetCurrentStepObjects()
@@ -131,7 +180,7 @@ public class TaskManager : MonoBehaviour
     {
         foreach (var obj in CurrentStep.objectsUsed)
         {
-            if (obj.objectName == objectName)
+            if (objectName.Contains(obj.objectName))
                 return obj.action;
         }
         return "";

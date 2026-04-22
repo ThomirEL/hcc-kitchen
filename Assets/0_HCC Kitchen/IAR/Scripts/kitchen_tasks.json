@@ -4,6 +4,44 @@
       "id": 1,
       "name": "Chopped Onion Salad",
       "description": "A fresh salad with chopped onions, tomatoes, and lettuce",
+      "items": [
+        {
+          "stepNumber": 1,
+          "itemNames": ["Knife"]
+        },
+        {
+          "stepNumber": 2,
+          "itemNames": ["Onion", "ChoppingBoard"]
+        },
+        {
+          "stepNumber": 3,
+          "itemNames": ["Knife", "Onion"]
+        },
+        {
+          "stepNumber": 4,
+          "itemNames": ["Tomato"]
+        },
+        {
+          "stepNumber": 5,
+          "itemNames": ["Knife", "Tomato"]
+        },
+        {
+          "stepNumber": 6,
+          "itemNames": ["Lettuce", "SaladBowl"]
+        },
+        {
+          "stepNumber": 7,
+          "itemNames": ["Onion"]
+        },
+        {
+          "stepNumber": 8,
+          "itemNames": ["Tomato"]
+        },
+        {
+          "stepNumber": 9,
+          "itemNames": ["OliveOil"]
+        }
+      ],
       "steps": [
         {
           "stepNumber": 1,
@@ -117,6 +155,48 @@
       "id": 2,
       "name": "Simple Pasta",
       "description": "Pasta with tomato sauce and basil",
+      "items": [
+        {
+          "stepNumber": 1,
+          "itemNames": ["Pot"]
+        },
+        {
+          "stepNumber": 2,
+          "itemNames": ["Pot", "Stove"]
+        },
+        {
+          "stepNumber": 3,
+          "itemNames": ["Water"]
+        },
+        {
+          "stepNumber": 4,
+          "itemNames": ["Salt", "Water"]
+        },
+        {
+          "stepNumber": 5,
+          "itemNames": ["Pasta"]
+        },
+        {
+          "stepNumber": 6,
+          "itemNames": ["Tomato", "ChoppingBoard"]
+        },
+        {
+          "stepNumber": 7,
+          "itemNames": ["Knife", "Tomato"]
+        },
+        {
+          "stepNumber": 8,
+          "itemNames": ["Tomato", "Pan", "OliveOil"]
+        },
+        {
+          "stepNumber": 9,
+          "itemNames": ["Pasta", "Pan"]
+        },
+        {
+          "stepNumber": 10,
+          "itemNames": ["Basil", "Plate"]
+        }
+      ],
       "steps": [
         {
           "stepNumber": 1,
@@ -256,6 +336,48 @@
       "id": 3,
       "name": "Vegetable Stir Fry",
       "description": "Quick stir fried vegetables with soy sauce",
+      "items": [
+        {
+          "stepNumber": 1,
+          "itemNames": ["Knife", "Carrot", "ChoppingBoard"]
+        },
+        {
+          "stepNumber": 2,
+          "itemNames": ["Knife", "Carrot"]
+        },
+        {
+          "stepNumber": 3,
+          "itemNames": ["Onion", "Knife"]
+        },
+        {
+          "stepNumber": 4,
+          "itemNames": ["Broccoli", "Knife"]
+        },
+        {
+          "stepNumber": 5,
+          "itemNames": ["OilBottle", "Wok", "Stove"]
+        },
+        {
+          "stepNumber": 6,
+          "itemNames": ["Onion"]
+        },
+        {
+          "stepNumber": 7,
+          "itemNames": ["Carrot", "Wok"]
+        },
+        {
+          "stepNumber": 8,
+          "itemNames": ["Broccoli"]
+        },
+        {
+          "stepNumber": 9,
+          "itemNames": ["SoySauce"]
+        },
+        {
+          "stepNumber": 10,
+          "itemNames": ["Plate"]
+        }
+      ],
       "steps": [
         {
           "stepNumber": 1,
@@ -395,6 +517,48 @@
       "id": 4,
       "name": "Tomato Soup",
       "description": "Creamy tomato soup with fresh herbs",
+      "items": [
+        {
+          "stepNumber": 1,
+          "itemNames": ["Tomato", "ChoppingBoard"]
+        },
+        {
+          "stepNumber": 2,
+          "itemNames": ["Knife", "Tomato"]
+        },
+        {
+          "stepNumber": 3,
+          "itemNames": ["Onion", "Knife"]
+        },
+        {
+          "stepNumber": 4,
+          "itemNames": ["OilBottle", "Pot", "Stove"]
+        },
+        {
+          "stepNumber": 5,
+          "itemNames": ["Onion", "Pot"]
+        },
+        {
+          "stepNumber": 6,
+          "itemNames": ["Tomato"]
+        },
+        {
+          "stepNumber": 7,
+          "itemNames": ["VegetableBroth", "Salt"]
+        },
+        {
+          "stepNumber": 8,
+          "itemNames": ["Pot", "Stove"]
+        },
+        {
+          "stepNumber": 9,
+          "itemNames": ["Cream", "Pot"]
+        },
+        {
+          "stepNumber": 10,
+          "itemNames": ["Ladle", "Bowl", "Basil"]
+        }
+      ],
       "steps": [
         {
           "stepNumber": 1,
