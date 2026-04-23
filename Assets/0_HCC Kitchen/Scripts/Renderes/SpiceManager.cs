@@ -263,7 +263,7 @@ public class SpiceManager : MonoBehaviour
             yield return new WaitForEndOfFrame();
         }
 
-        Debug.Log("[SpiceManager] RenderAllSpicesSequential - About to shuffle");
+//        Debug.Log("[SpiceManager] RenderAllSpicesSequential - About to shuffle");
         ShuffleObjectLocations(spicesToRender);
 
         _isRenderingSequence = false;
@@ -348,7 +348,7 @@ public class SpiceManager : MonoBehaviour
         if (objects.Count < 2)
             return;
 
-        Debug.Log($"[SpiceManager] ShuffleObjectLocations: Shuffling {objects.Count} spices - {string.Join(", ", objects.Select(o => o.name))}");
+        //Debug.Log($"[SpiceManager] ShuffleObjectLocations: Shuffling {objects.Count} spices - {string.Join(", ", objects.Select(o => o.name))}");
 
         for (int i = 0; i < positions.Count; i++)
         {

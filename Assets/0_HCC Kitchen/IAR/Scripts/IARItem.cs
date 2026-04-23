@@ -8,7 +8,7 @@ using UnityEngine;
 public class IARItem : MonoBehaviour
 {
 
-    void Awake()
+    void Start()
     {
         IARInteractionDatabase.Instance.RegisterPart(gameObject.name, GetComponent<IARPart>());
 

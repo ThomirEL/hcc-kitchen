@@ -430,7 +430,7 @@ public class KitchenHighlightManager : MonoBehaviour
 
         // Parse CSV to get list of permutations
         string[] lines = File.ReadAllLines(fullPath);
-        Debug.Log($"[Highlight] Loaded permutations.csv with {lines.Length - 1} permutations.");
+//        Debug.Log($"[Highlight] Loaded permutations.csv with {lines.Length - 1} permutations.");
         
         // If no index specified, pick a random one
         if (permutationIndex < 0)

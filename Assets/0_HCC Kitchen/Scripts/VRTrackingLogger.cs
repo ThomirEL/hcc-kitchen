@@ -26,7 +26,7 @@ public class VRTrackingLogger : MonoBehaviour
 
     private bool _loggingInitialized = false;
     private static readonly string LoggerCategory = "VRTracking";
-    private static readonly string[] ColumnNames = { "U_Frame", "HMD_X", "HMD_Y", "HMD_Z", "Left_X", "Left_Y", "Left_Z", "Right_X", "Right_Y", "Right_Z" };
+    private static readonly string[] ColumnNames = { "U_Frame", "HMD_X", "HMD_Y", "HMD_Z", "HMD_Rotation_X", "HMD_Rotation_Y", "HMD_Rotation_Z", "Left_X", "Left_Y", "Left_Z", "Right_X", "Right_Y", "Right_Z" };
 
     private void Start()
     {
@@ -64,18 +64,21 @@ public class VRTrackingLogger : MonoBehaviour
         msg[1] = hmdPos.x.ToString("F4");
         msg[2] = hmdPos.y.ToString("F4");
         msg[3] = hmdPos.z.ToString("F4");
+        msg[4] = hmdTransform != null ? hmdTransform.rotation.eulerAngles.x.ToString("F4") : "0.0000";
+        msg[5] = hmdTransform != null ? hmdTransform.rotation.eulerAngles.y.ToString("F4") : "0.0000";
+        msg[6] = hmdTransform != null ? hmdTransform.rotation.eulerAngles.z.ToString("F4") : "0.0000";
 
         // Left Controller Position
         Vector3 leftPos = leftControllerTransform != null ? leftControllerTransform.position : Vector3.zero;
-        msg[4] = leftPos.x.ToString("F4");
-        msg[5] = leftPos.y.ToString("F4");
-        msg[6] = leftPos.z.ToString("F4");
+        msg[7] = leftPos.x.ToString("F4");
+        msg[8] = leftPos.y.ToString("F4");
+        msg[9] = leftPos.z.ToString("F4");
 
         // Right Controller Position
         Vector3 rightPos = rightControllerTransform != null ? rightControllerTransform.position : Vector3.zero;
-        msg[7] = rightPos.x.ToString("F4");
-        msg[8] = rightPos.y.ToString("F4");
-        msg[9] = rightPos.z.ToString("F4");
+        msg[10] = rightPos.x.ToString("F4");
+        msg[11  ] = rightPos.y.ToString("F4");
+        msg[12] = rightPos.z.ToString("F4");
 
         Logging.Logger.RecordVRStats(msg);
     }

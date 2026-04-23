@@ -191,7 +191,7 @@ public class CanManager : MonoBehaviour
 
     private IEnumerator RenderAllCansSequential(CanDefinition[] selection)
     {
-        Debug.Log("[CanManager] RenderAllCansSequential START");
+//        Debug.Log("[CanManager] RenderAllCansSequential START");
         _isRenderingSequence = true;
 
         for (int i = 0; i < selection.Length; i++)
@@ -236,7 +236,7 @@ public class CanManager : MonoBehaviour
         ShuffleObjectLocations(selection);
 
         _isRenderingSequence = false;
-        Debug.Log("[CanManager] RenderAllCansSequential END");
+//        Debug.Log("[CanManager] RenderAllCansSequential END");
     }
 
     public void RenderAllCansNow()

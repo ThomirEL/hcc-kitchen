@@ -9,6 +9,13 @@ using UnityEngine;
 [RequireComponent(typeof(Renderer))]
 public class DOITextureSetup : MonoBehaviour
 {
+    public enum RenderFace
+    {
+        Front = 1,
+        Back = 2,
+        Both = 0
+    }
+
     [Header("Low-Res Settings")]
     [Tooltip("Divisor applied to original resolution. 8 = 1/8th size, giving a blurry pixelated look.")]
     [Range(2, 32)]
@@ -17,6 +24,10 @@ public class DOITextureSetup : MonoBehaviour
     [Tooltip("How many times to ping-pong the low-res texture through itself for extra blur.")]
     [Range(0, 4)]
     public int blurPasses = 2;
+
+    [Header("Render Settings")]
+    [Tooltip("Which face(s) to render: Front, Back, or Both (no culling).")]
+    public RenderFace renderFace = RenderFace.Front;
 
     private Renderer _renderer;
     private Material _material;
@@ -27,19 +38,33 @@ public class DOITextureSetup : MonoBehaviour
     _renderer = GetComponent<Renderer>();
     _material = _renderer.material;
 
+    // Change shader to URP_DOI_Master
+    Shader doiShader = Shader.Find("Custom/URP_DOI_Master");
+    if (doiShader != null)
+    {
+        _material.shader = doiShader;
+    }
+    else
+    {
+        Debug.LogWarning($"[DOITextureSetup] {gameObject.name}: Could not find shader 'URP_DOI_Master'");
+    }
+
+    // Set render face via shader property for runtime changes
+    //_material.SetFloat("_CullMode", (float)renderFace);
+
     Texture2D existingTexture = _material.GetTexture("_BaseMap") as Texture2D;
 
     if (existingTexture == null)
     {
-        Debug.Log($"[DOITextureSetup] {gameObject.name}: No texture found, using base color only.");
+        //Debug.Log($"[DOITextureSetup] {gameObject.name}: No texture found, using base color only.");
         return;
     }
 
     _lowResRT = GenerateLowResTexture(existingTexture);
     _material.SetTexture("_LowResMap", _lowResRT);
 
-    Debug.Log($"[DOITextureSetup] {gameObject.name}: Set up {existingTexture.width}x{existingTexture.height} " +
-              $"→ low-res {existingTexture.width / downsampleFactor}x{existingTexture.height / downsampleFactor}");
+    //Debug.Log($"[DOITextureSetup] {gameObject.name}: Set up {existingTexture.width}x{existingTexture.height} " +
+      //        $"→ low-res {existingTexture.width / downsampleFactor}x{existingTexture.height / downsampleFactor}");
 }
 
     /// <summary>

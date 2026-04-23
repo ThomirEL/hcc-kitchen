@@ -24,6 +24,7 @@ Shader "Custom/URP_DOI_Master"
         _EmissionColor  ("Emission Color",       Color)         = (1,1,1,1)
         _MaxEmission    ("Max Emission",         Range(0,2))    = 0.3
         _BlurStrength   ("Blur Strength",        Range(0,0.02)) = 0.005
+        _CullMode       ("Cull Mode",           Int)           = 1
 
         // ── Toggles are intentionally NOT in Properties ───────────────────
         // They are set via Shader.SetGlobalFloat from IARManager.
@@ -47,7 +48,7 @@ Shader "Custom/URP_DOI_Master"
 
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
-            Cull Back
+            Cull [_CullMode]
 
             HLSLPROGRAM
 

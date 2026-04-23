@@ -10,16 +10,12 @@ public class IARManager : MonoBehaviour
     public List<IARPart> allParts = new();
 
     [Header("Source Weights")]
-    [Range(0, 2)] public float gamma1_part = 1f;
-    [Range(0, 2)] public float gamma2_user = 1f;
+    [Range(0, 1)] public float CommonalityWeight = 1f;
+    [Range(0, 1)] public float CurrentTaskRelevanceWeight = 1f;
+    [Range(0, 1)] public float FutureTaskRelevanceWeight = 1f;
+    [Range(0, 1)] public float DangerWeight   = 1f;
+    [Range(0, 1)] public float PairingWeight = 1f;
 
-    [Header("Part Weights")]
-    [Range(0, 2)] public float alpha1_intrinsic = 1f;
-    [Range(0, 2)] public float beta1_relation   = 0.8f;
-
-    [Header("User Weights")]
-    [Range(0, 2)] public float alpha2_intent = 1f;
-    [Range(0, 2)] public float beta2_action  = 0.8f;
 
     [Header("DOI ranges")]
     public float COMMON_MIN = 0.0f;
@@ -70,6 +66,28 @@ public class IARManager : MonoBehaviour
     {
         // Update shader settings whenever values change in the editor
         UpdateShaderSettings();
+        Debug.Log("IARManager: OnValidate called, updating shader settings.");
+        // Recalculate DOI for all parts when any DOI settings change
+        RecalculateAllDOIs();
+    }
+
+    /// <summary>
+    /// Recalculates DOI for all registered parts.
+    /// Call this after changing any DOI weights, ranges, or toggles.
+    /// </summary>
+    public void RecalculateAllDOIs()
+    {
+        if (allParts == null || allParts.Count == 0)
+        {
+            // Try to find all parts if not already cached
+            allParts = new List<IARPart>(FindObjectsOfType<IARPart>());
+        }
+
+        foreach (var part in allParts)
+        {
+            if (part != null)
+                part.RecalculateDOI();
+        }
     }
 
 

@@ -265,7 +265,7 @@ public class DryGoodsManager : MonoBehaviour
         ShuffleObjectLocations(selection);
 
         _isRenderingSequence = false;
-        Debug.Log("[DryGoodsManager] RenderAllSequential END");
+//        Debug.Log("[DryGoodsManager] RenderAllSequential END");
     }
 
     private IEnumerator RenderBaseDryGood(DryGoodsDefinition baseDryGood)
@@ -355,7 +355,7 @@ private void ShuffleObjectLocations(DryGoodsDefinition[] definitions)
     if (objects.Count < 2)
         return;
 
-    Debug.Log($"[DryGoodsManager] ShuffleObjectLocations: Shuffling {objects.Count} dry goods");
+//    Debug.Log($"[DryGoodsManager] ShuffleObjectLocations: Shuffling {objects.Count} dry goods");
 
     for (int i = 0; i < positions.Count; i++)
     {

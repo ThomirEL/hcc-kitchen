@@ -68,15 +68,18 @@ public class IARInteractionDatabase : MonoBehaviour
     {
         string key = TriggerKey(itemName, state);
         if (!_lookup.TryGetValue(key, out var effects)) return;
+        IARPart self = GetPart(itemName);
 
         foreach (var effect in effects)
         {
             if (!_parts.TryGetValue(effect.item, out var targetPart)) continue;
 
-            if (active)
+            if (active) {
                 targetPart.SetContribution(effect.key, effect.value);
-            else
+                self.SetContribution("self", 1f); // Apply effect to self as well if active
+            } else {
                 targetPart.ClearContribution(effect.key);
+            }
         }
     }
 

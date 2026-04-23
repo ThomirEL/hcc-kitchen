@@ -76,8 +76,10 @@ public class ChoppableObject : MonoBehaviour
             if (chunk.GetComponent<XRGrabInteractable>() == null)
                 chunk.AddComponent<XRGrabInteractable>();
 
-            // Tag chunks for identification by other systems (e.g., bowl detection)
+            // Tag chunks for identification by other systems (e.g., bowl detection) to it and all children
             chunk.tag = "Chunk";
+            foreach (Transform child in chunk.transform)
+                child.gameObject.tag = "Chunk";
 
             // Scatter force: inherit knife direction + random spread
             Vector3 scatter = (knifeVelocity.normalized + Random.insideUnitSphere * 0.4f)
