@@ -109,6 +109,7 @@ Material:
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 2
+    - _CullMode: 2
     - _Cutoff: 0.5
     - _DOI: 0.75
     - _DetailAlbedoMapScale: 1

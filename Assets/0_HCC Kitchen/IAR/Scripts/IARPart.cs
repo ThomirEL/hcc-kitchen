@@ -263,11 +263,10 @@ public class IARPart : MonoBehaviour
 
     private void calculateThisDOI(string changedAspect = null)
     {
-        if (log)
-            Debug.Log($" Calculating DOI for {name} (changed aspect: {changedAspect}) Commonality: {HowCommon}, Danger: {HowDangerous}, Intent: {GetCombinedIntentInterest()}, InCurrentStep: {IsInCurrentStep}, StepsInToFuture: {StepsInToFuture}");
+        var prevDOI = currentDoI;
         currentDoI = CalculateDOI();
         if (log)
-            Debug.Log($"  → New DOI: {currentDoI}");
+        Debug.Log($" Calculating DOI for {name} (changed aspect: {changedAspect}), DOI was {prevDOI} -> new DOI {currentDoI}, /n  Commonality: {HowCommon}, Danger: {HowDangerous}, Intent: {GetCombinedIntentInterest()}, InCurrentStep: {IsInCurrentStep}, StepsInToFuture: {StepsInToFuture}");
 
         if (cachedRenderer != null && cachedRenderer.material != null)
         {
@@ -275,9 +274,23 @@ public class IARPart : MonoBehaviour
         }
         else
         {
-            Renderer childRenderer = GetComponentInChildren<Renderer>();
-            if (childRenderer != null && childRenderer.material != null)
-                childRenderer.material.SetFloat("_DOI", currentDoI);
+            if (gameObject.name == "Chopping Knife")
+            {
+                Debug.LogWarning($"IARPart '{name}' cannot update material - Renderer or material not found on object! Attempting to update children renderers as fallback.");
+            }
+            Renderer[] childRenderers = GetComponentsInChildren<Renderer>();
+            if (gameObject.name == "Chopping Knife")
+            {
+                Debug.Log($"Found {childRenderers.Length} child renderers for '{name}'.");
+            }
+            if (childRenderers.Length > 0)
+            {
+                foreach (Renderer childRenderer in childRenderers)
+                {
+                    if (childRenderer != null && childRenderer.material != null)
+                        childRenderer.material.SetFloat("_DOI", currentDoI);
+                }
+            }
             else
                 Debug.LogWarning($"IARPart '{name}' cannot update material - Renderer or material not found on object or children!");
         }
@@ -298,8 +311,14 @@ public class IARPart : MonoBehaviour
         if (manager.Commonality)            DOI += CalculateCommonality();
         if (manager.Danger)                 DOI += CalculateDanger();
         if (manager.Intent)                 DOI += CalculateIntent();
-        //if (manager.CurrentTaskRelevance)   DOI += AddDOIForCurrentStep();
-        //if (manager.FutureTaskRelevance)    DOI += AddDOIForFutureSteps();
+        
+        // Only calculate task relevance if this item is in the current recipe
+        GetTaskManager();
+        if (taskManager != null && taskManager.IsItemInCurrentRecipe(gameObject.name))
+        {
+            if (manager.CurrentTaskRelevance)   DOI += AddDOIForCurrentStep();
+            if (manager.FutureTaskRelevance)    DOI += AddDOIForFutureSteps(_stepsInToFuture ?? 0);
+        }
 
         return Mathf.Clamp01(DOI);
     }
@@ -322,6 +341,12 @@ public class IARPart : MonoBehaviour
     public void ClearContribution(string key)
     {
         _contributions.Remove(key);
+    }
+
+    public void ClearAllContributions()
+    {
+        _contributions.Clear();
+        calculateThisDOI("ClearAllContributions");
     }
 
     public float GetCombinedIntentInterest()
@@ -347,7 +372,11 @@ public class IARPart : MonoBehaviour
         }
 
         List<string> currentStepObjects = taskManager.GetCurrentStepObjects();
-
+        //Debug.Log($"IARPart '{name}' checking current step relevance. Current step objects: {string.Join(", ", currentStepObjects)}");
+        if (gameObject.name == "Chopping Knife")
+        {
+            Debug.Log($"IARPart '{name}' checking current step relevance. Current step objects: {string.Join(", ", currentStepObjects)}");
+        }
         if (currentStepObjects.Contains(gameObject.name))
         {
             if (log) Debug.Log($"{gameObject.name} is used in current step: {taskManager.CurrentStep.description}");
@@ -356,47 +385,15 @@ public class IARPart : MonoBehaviour
         return 0f;
     }
 
-    public float AddDOIForFutureSteps(int stepsAhead = 5)
+    public float AddDOIForFutureSteps(int howManyStepsAhead)
     {
-        TaskManager tm = TaskManager.Instance;
-        if (tm == null)
-        {
-            Debug.LogWarning($"IARPart '{name}' cannot find TaskManager!");
-            return 0f;
-        }
+        // Maps: 1 step ahead → 1.0,  2 steps → 0.5,  3 steps → 0.0
+        // (howManyStepsAhead - 1) normalized over the range [1..3]
+        float t = (howManyStepsAhead - 1f) / 2f;
+        float distanceFactor = Mathf.Lerp(1f, 0f, t);
 
-        KitchenTask currentRecipe   = tm.CurrentRecipe;
-        int         currentStepIndex = tm.CurrentStep.stepNumber - 1;
-        float       totalFutureDOI  = 0f;
-
-        for (int i = 1; i <= stepsAhead && (currentStepIndex + i) < currentRecipe.steps.Count; i++)
-        {
-            TaskStep futureStep     = currentRecipe.steps[currentStepIndex + i];
-            var      futureObjects  = new List<string>();
-
-            foreach (var obj in futureStep.objectsUsed)
-                futureObjects.Add(obj.objectName);
-
-            if (futureObjects.Contains(gameObject.name))
-            {
-                float distanceFactor = Mathf.Exp(-i * i / (2f * manager.gaussianSigma * manager.gaussianSigma));
-                totalFutureDOI += distanceFactor;
-
-                if (log) Debug.Log($"{gameObject.name} used in {i} steps: {futureStep.description} (bonus: {distanceFactor})");
-            }
-        }
-
-        if (totalFutureDOI > 0f)
-        {
-            totalFutureDOI = Mathf.Clamp01(totalFutureDOI);
-            SetContribution("recipe.futureSteps",  totalFutureDOI);
-        }
-        else
-        {
-            ClearContribution("recipe.futureSteps");
-        }
-
-        return totalFutureDOI;
+        if (log) Debug.Log($"{gameObject.name} used in {howManyStepsAhead} step(s) ahead (bonus: {distanceFactor})");
+        return distanceFactor;
     }
 
     private float CalculateStepDistanceFalloff(int stepDistance)

@@ -4,12 +4,20 @@ using TMPro;
 using UnityEngine.InputSystem;
 
 [System.Serializable]
+public class TaskRecipeItem
+{
+    public int stepNumber;
+    public List<string> itemNames;
+}
+
+[System.Serializable]
 public class KitchenTask
 {
     public int id;
     public string name;
     public string description;
     public List<TaskStep> steps;
+    public List<TaskRecipeItem> items;
 }
 
 [System.Serializable]
@@ -94,6 +102,8 @@ public class TaskManager : MonoBehaviour
             progressUI.text = $"{_currentStepIndex + 1}/{task.steps.Count}";
 
         Debug.Log($"Current Step: {step.description}");
+        
+        UpdateStepsInToFuture();
     }
 
     /// <summary>
@@ -184,5 +194,68 @@ public class TaskManager : MonoBehaviour
                 return obj.action;
         }
         return "";
+    }
+
+    /// <summary>
+    /// Checks if an item name is used anywhere in the current recipe
+    /// </summary>
+    public bool IsItemInCurrentRecipe(string itemName)
+    {
+        if (CurrentRecipe == null || CurrentRecipe.items == null)
+            return true; // If items list doesn't exist, assume it's in the recipe
+
+        foreach (var recipeItem in CurrentRecipe.items)
+        {
+            if (recipeItem.itemNames.Contains(itemName))
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Updates StepsInToFuture for all IARPart components based on the next n=3 steps.
+    /// For each item, finds the soonest step it appears in and sets StepsInToFuture to the distance.
+    /// E.g., if knife appears in step 2 and 4, and we're at step 1, StepsInToFuture = 1.
+    /// </summary>
+    private void UpdateStepsInToFuture(int stepsAhead = 3)
+    {
+        // Get all IARPart components in the scene
+        IARPart[] allParts = FindObjectsOfType<IARPart>();
+
+        // Dictionary to cache which parts need which steps
+        var itemToNearestStep = new Dictionary<string, int>();
+
+        // Look ahead n steps from current step
+        for (int i = 1; i <= stepsAhead && (_currentStepIndex + i) < CurrentRecipe.steps.Count; i++)
+        {
+            TaskStep futureStep = CurrentRecipe.steps[_currentStepIndex + i];
+            
+            foreach (var obj in futureStep.objectsUsed)
+            {
+                // Only record the soonest step for each item
+                if (!itemToNearestStep.ContainsKey(obj.objectName))
+                {
+                    itemToNearestStep[obj.objectName] = i;
+                }
+            }
+        }
+
+        // Update each IARPart's StepsInToFuture
+        foreach (IARPart part in allParts)
+        {
+            int? stepsIntoFuture = null;
+            
+            // Check if this part appears in any of the next steps
+            foreach (var kvp in itemToNearestStep)
+            {
+                if (part.gameObject.name.Contains(kvp.Key))
+                {
+                    stepsIntoFuture = kvp.Value;
+                    break; // Use the first match (soonest step)
+                }
+            }
+
+            part.StepsInToFuture = stepsIntoFuture;
+        }
     }
 }

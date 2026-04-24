@@ -7,27 +7,27 @@
       "items": [
         {
           "stepNumber": 1,
-          "itemNames": ["Knife"]
+          "itemNames": ["Chopping Knife"]
         },
         {
           "stepNumber": 2,
-          "itemNames": ["Onion", "ChoppingBoard"]
+          "itemNames": ["Onion", "Chopping Board"]
         },
         {
           "stepNumber": 3,
-          "itemNames": ["Knife", "Onion"]
+          "itemNames": ["Chopping Knife", "Onion"]
         },
         {
           "stepNumber": 4,
-          "itemNames": ["Tomato"]
+          "itemNames": ["Tomato", "Chopping Board"]
         },
         {
           "stepNumber": 5,
-          "itemNames": ["Knife", "Tomato"]
+          "itemNames": ["Chopping Knife", "Tomato"]
         },
         {
           "stepNumber": 6,
-          "itemNames": ["Lettuce", "SaladBowl"]
+          "itemNames": ["Lettuce", "Salad Bowl"]
         },
         {
           "stepNumber": 7,
@@ -39,7 +39,7 @@
         },
         {
           "stepNumber": 9,
-          "itemNames": ["OliveOil"]
+          "itemNames": ["Oil"]
         }
       ],
       "steps": [

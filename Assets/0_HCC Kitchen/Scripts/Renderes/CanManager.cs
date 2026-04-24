@@ -232,7 +232,7 @@ public class CanManager : MonoBehaviour
         }
 
         // After all texture assignments are complete, shuffle object positions in the scene
-        Debug.Log("[CanManager] RenderAllCansSequential - About to shuffle");
+//        Debug.Log("[CanManager] RenderAllCansSequential - About to shuffle");
         ShuffleObjectLocations(selection);
 
         _isRenderingSequence = false;
@@ -358,7 +358,7 @@ void Update()
         if (objects.Count < 2)
             return;
 
-        Debug.Log($"[CanManager] ShuffleObjectLocations: Shuffling {objects.Count} cans - {string.Join(", ", objects.Select(o => o.name))}");
+//        Debug.Log($"[CanManager] ShuffleObjectLocations: Shuffling {objects.Count} cans - {string.Join(", ", objects.Select(o => o.name))}");
 
         for (int i = 0; i < positions.Count; i++)
         {

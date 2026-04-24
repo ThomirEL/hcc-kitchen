@@ -7,27 +7,27 @@
       "items": [
         {
           "stepNumber": 1,
-          "itemNames": ["Knife"]
+          "itemNames": ["Chopping Knife"]
         },
         {
           "stepNumber": 2,
-          "itemNames": ["Onion", "ChoppingBoard"]
+          "itemNames": ["Onion", "Chopping Board"]
         },
         {
           "stepNumber": 3,
-          "itemNames": ["Knife", "Onion"]
+          "itemNames": ["Chopping Knife", "Onion"]
         },
         {
           "stepNumber": 4,
-          "itemNames": ["Tomato"]
+          "itemNames": ["Tomato", "Chopping Board"]
         },
         {
           "stepNumber": 5,
-          "itemNames": ["Knife", "Tomato"]
+          "itemNames": ["Chopping Knife", "Tomato"]
         },
         {
           "stepNumber": 6,
-          "itemNames": ["Lettuce", "SaladBowl"]
+          "itemNames": ["Lettuce", "Salad Bowl"]
         },
         {
           "stepNumber": 7,
@@ -39,7 +39,7 @@
         },
         {
           "stepNumber": 9,
-          "itemNames": ["OliveOil"]
+          "itemNames": ["Oil"]
         }
       ],
       "steps": [
@@ -48,7 +48,7 @@
           "description": "Grab the knife from the drawer",
           "objectsUsed": [
             {
-              "objectName": "Knife",
+              "objectName": "Chopping Knife",
               "action": "grab"
             }
           ]
@@ -62,7 +62,7 @@
               "action": "place"
             },
             {
-              "objectName": "ChoppingBoard",
+              "objectName": "Chopping Board",
               "action": "use_as_surface"
             }
           ]
@@ -72,7 +72,7 @@
           "description": "Chop the onion into small pieces",
           "objectsUsed": [
             {
-              "objectName": "Knife",
+              "objectName": "Chopping Knife",
               "action": "chop"
             },
             {
@@ -96,7 +96,7 @@
           "description": "Chop the tomato into small pieces",
           "objectsUsed": [
             {
-              "objectName": "Knife",
+              "objectName": "Chopping Knife",
               "action": "chop"
             },
             {
@@ -114,7 +114,7 @@
               "action": "place"
             },
             {
-              "objectName": "SaladBowl",
+              "objectName": "Salad Bowl",
               "action": "fill"
             }
           ]
@@ -144,7 +144,7 @@
           "description": "Pour olive oil over the salad",
           "objectsUsed": [
             {
-              "objectName": "OliveOil",
+              "objectName": "Oil",
               "action": "pour"
             }
           ]

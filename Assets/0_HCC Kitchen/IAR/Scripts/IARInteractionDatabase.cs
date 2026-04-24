@@ -70,6 +70,19 @@ public class IARInteractionDatabase : MonoBehaviour
         if (!_lookup.TryGetValue(key, out var effects)) return;
         IARPart self = GetPart(itemName);
 
+        // If this item is being picked up (held state), clear all other items' contributions first
+        if (state == "held" && active)
+        {
+            foreach (var part in _parts.Values)
+            {
+                if (part != self)
+                {
+                    // Clear all contributions from all other items
+                    part.ClearAllContributions();
+                }
+            }
+        }
+
         foreach (var effect in effects)
         {
             if (!_parts.TryGetValue(effect.item, out var targetPart)) continue;

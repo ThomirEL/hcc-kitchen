@@ -157,6 +157,8 @@ GameObject:
   - component: {fileID: 698316228742040397}
   - component: {fileID: 6503560139734691887}
   - component: {fileID: 4861709033362099811}
+  - component: {fileID: 3529428161539096969}
+  - component: {fileID: 2412319020487573024}
   m_Layer: 0
   m_Name: Onion
   m_TagString: Untagged
@@ -352,6 +354,38 @@ MonoBehaviour:
   spawnCount: 4
   chunkScatterForce: 0.5
   allowReChop: 0
+--- !u!114 &3529428161539096969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8340732089312160259}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 864ef9c44b4431248909be5717d15f5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IARPart
+  _howCommon: 0.5
+  _howDangerous: 0
+  log: 0
+  currentDoI: 0.5
+  cachedRenderer: {fileID: 0}
+  cachedCollider: {fileID: 0}
+  selfContributionKey: 
+  selfContrubutionDuration: 0
+--- !u!114 &2412319020487573024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8340732089312160259}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15de98997b784f24ea7b93c3ca0a5628, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IARItem
 --- !u!1 &8424031501266579933
 GameObject:
   m_ObjectHideFlags: 0
