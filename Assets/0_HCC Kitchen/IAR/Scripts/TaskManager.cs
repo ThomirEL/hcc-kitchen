@@ -54,8 +54,8 @@ public class TaskManager : MonoBehaviour
 
     public static TaskManager Instance { get; private set; }
 
-    public KitchenTask CurrentRecipe => _taskList.recipes[_currentRecipeIndex];
-    public TaskStep CurrentStep => CurrentRecipe.steps[_currentStepIndex];
+    public KitchenTask CurrentRecipe => _taskList?.recipes?[_currentRecipeIndex];
+    public TaskStep CurrentStep => CurrentRecipe?.steps[_currentStepIndex];
 
     void Awake()
     {
@@ -139,6 +139,9 @@ public class TaskManager : MonoBehaviour
 
     public void CompleteStep()
     {
+        if (CurrentRecipe?.steps == null)
+            return;
+        
         _currentStepIndex++;
 
         if (_currentStepIndex >= CurrentRecipe.steps.Count)
@@ -162,11 +165,14 @@ public class TaskManager : MonoBehaviour
 
     public void CompleteRecipe()
     {
+        if (CurrentRecipe == null)
+            return;
+        
         Debug.Log($"Recipe '{CurrentRecipe.name}' completed!");
         _currentRecipeIndex++;
         _currentStepIndex = 0;
 
-        if (_currentRecipeIndex >= _taskList.recipes.Count)
+        if (_taskList?.recipes != null && _currentRecipeIndex >= _taskList.recipes.Count)
         {
             Debug.Log("All recipes completed!");
             _currentRecipeIndex = 0; // Loop back to first
@@ -179,15 +185,21 @@ public class TaskManager : MonoBehaviour
     public List<string> GetCurrentStepObjects()
     {
         var objects = new List<string>();
-        foreach (var obj in CurrentStep.objectsUsed)
+        if (CurrentStep?.objectsUsed != null)
         {
-            objects.Add(obj.objectName);
+            foreach (var obj in CurrentStep.objectsUsed)
+            {
+                objects.Add(obj.objectName);
+            }
         }
         return objects;
     }
 
     public string GetCurrentStepAction(string objectName)
     {
+        if (CurrentStep?.objectsUsed == null)
+            return "";
+        
         foreach (var obj in CurrentStep.objectsUsed)
         {
             if (objectName.Contains(obj.objectName))
@@ -219,6 +231,9 @@ public class TaskManager : MonoBehaviour
     /// </summary>
     private void UpdateStepsInToFuture(int stepsAhead = 3)
     {
+        if (CurrentRecipe?.steps == null)
+            return;
+        
         // Get all IARPart components in the scene
         IARPart[] allParts = FindObjectsOfType<IARPart>();
 

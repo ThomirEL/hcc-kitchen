@@ -287,8 +287,8 @@ public class IARPart : MonoBehaviour
             {
                 foreach (Renderer childRenderer in childRenderers)
                 {
-                    if (childRenderer != null && childRenderer.material != null)
-                        childRenderer.material.SetFloat("_DOI", currentDoI);
+                    if (childRenderer != null && childRenderer.sharedMaterial != null)
+                        childRenderer.sharedMaterial.SetFloat("_DOI", currentDoI);
                 }
             }
             else
