@@ -43,7 +43,7 @@ public class TaskList
 
 public class TaskManager : MonoBehaviour
 {
-    [SerializeField] private TextAsset taskJsonFile;
+    
     [SerializeField] private TextMeshProUGUI stepDisplayUI;
     [SerializeField] private TextMeshProUGUI taskNameUI;
     [SerializeField] private TextMeshProUGUI progressUI;
@@ -77,12 +77,13 @@ public class TaskManager : MonoBehaviour
 
     void LoadTasks()
     {
-        if (taskJsonFile == null)
+        TextAsset json = Resources.Load<TextAsset>("kitchen_tasks");
+        if (json == null)
         {
             Debug.LogError("Task JSON file not assigned!");
             return;
         }
-        _taskList = JsonUtility.FromJson<TaskList>(taskJsonFile.text);
+        _taskList = JsonUtility.FromJson<TaskList>(json.text);
     }
 
     public void DisplayCurrentStep()
@@ -110,7 +111,7 @@ public class TaskManager : MonoBehaviour
     /// Updates IARPart components based on the current step.
     /// Sets IsInCurrentStep to true for objects used in current step,
     /// and false for all other IARPart objects.
-    /// Matches objects by substring - e.g. "broccoli" matches "broccoli" and "broccoli chunk".
+    /// Matches objects by base name (first word) - e.g. "Onion" matches "Onion" and "Onion Chunk".
     /// </summary>
     private void UpdateCurrentStepParts()
     {
@@ -123,11 +124,14 @@ public class TaskManager : MonoBehaviour
         // Update each IARPart
         foreach (IARPart part in allParts)
         {
-            // Check if this part's game object name contains any of the required object names
+            // Check if this part's game object name contains any of the required object names (by base name)
             bool isInStep = false;
+            string basePartName = GetBaseItemName(part.gameObject.name);
+            
             foreach (string objectName in currentStepObjectNames)
             {
-                if (part.gameObject.name.Contains(objectName))
+                string baseObjectName = GetBaseItemName(objectName);
+                if (basePartName == baseObjectName)
                 {
                     isInStep = true;
                     break;
@@ -182,6 +186,15 @@ public class TaskManager : MonoBehaviour
         UpdateCurrentStepParts();
     }
 
+    /// <summary>
+    /// Extracts the base item name (first word) to normalize variants like "Onion" and "Onion Chunk"
+    /// </summary>
+    private string GetBaseItemName(string itemName)
+    {
+        if (string.IsNullOrEmpty(itemName)) return itemName;
+        return itemName.Split(' ')[0];
+    }
+
     public List<string> GetCurrentStepObjects()
     {
         var objects = new List<string>();
@@ -200,9 +213,12 @@ public class TaskManager : MonoBehaviour
         if (CurrentStep?.objectsUsed == null)
             return "";
         
+        string baseObjectName = GetBaseItemName(objectName);
+        
         foreach (var obj in CurrentStep.objectsUsed)
         {
-            if (objectName.Contains(obj.objectName))
+            string baseStepObjectName = GetBaseItemName(obj.objectName);
+            if (baseObjectName == baseStepObjectName)
                 return obj.action;
         }
         return "";
@@ -225,11 +241,11 @@ public class TaskManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Updates StepsInToFuture for all IARPart components based on the next n=3 steps.
+    /// Updates StepsInToFuture for all IARPart components based on all remaining steps.
     /// For each item, finds the soonest step it appears in and sets StepsInToFuture to the distance.
-    /// E.g., if knife appears in step 2 and 4, and we're at step 1, StepsInToFuture = 1.
+    /// Matches objects by base name (first word) - e.g. "Onion" matches "Onion" and "Onion Chunk".
     /// </summary>
-    private void UpdateStepsInToFuture(int stepsAhead = 3)
+    private void UpdateStepsInToFuture()
     {
         if (CurrentRecipe?.steps == null)
             return;
@@ -237,20 +253,21 @@ public class TaskManager : MonoBehaviour
         // Get all IARPart components in the scene
         IARPart[] allParts = FindObjectsOfType<IARPart>();
 
-        // Dictionary to cache which parts need which steps
+        // Dictionary to cache which base items need which steps
         var itemToNearestStep = new Dictionary<string, int>();
 
-        // Look ahead n steps from current step
-        for (int i = 1; i <= stepsAhead && (_currentStepIndex + i) < CurrentRecipe.steps.Count; i++)
+        // Look ahead through all remaining steps
+        for (int i = 1; (_currentStepIndex + i) < CurrentRecipe.steps.Count; i++)
         {
             TaskStep futureStep = CurrentRecipe.steps[_currentStepIndex + i];
             
             foreach (var obj in futureStep.objectsUsed)
             {
-                // Only record the soonest step for each item
-                if (!itemToNearestStep.ContainsKey(obj.objectName))
+                string baseItemName = GetBaseItemName(obj.objectName);
+                // Only record the soonest step for each base item
+                if (!itemToNearestStep.ContainsKey(baseItemName))
                 {
-                    itemToNearestStep[obj.objectName] = i;
+                    itemToNearestStep[baseItemName] = i;
                 }
             }
         }
@@ -259,14 +276,15 @@ public class TaskManager : MonoBehaviour
         foreach (IARPart part in allParts)
         {
             int? stepsIntoFuture = null;
+            string basePartName = GetBaseItemName(part.gameObject.name);
             
             // Check if this part appears in any of the next steps
             foreach (var kvp in itemToNearestStep)
             {
-                if (part.gameObject.name.Contains(kvp.Key))
+                if (basePartName == kvp.Key)
                 {
                     stepsIntoFuture = kvp.Value;
-                    break; // Use the first match (soonest step)
+                    break;
                 }
             }
 

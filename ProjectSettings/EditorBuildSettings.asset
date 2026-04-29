@@ -8,13 +8,13 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/0_HCC Kitchen/Scenes/Kitchen Assets.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 0
+  - enabled: 1
     path: Assets/0_HCC Kitchen/Scenes/Experiment Kitchen.unity
     guid: 36efdf538944a2a4395427cf3d105926
   - enabled: 0
     path: Assets/Samples/XR Interaction Toolkit/3.4.0/Starter Assets/DemoScene.unity
     guid: 319dafa5c80f29f428dc1e0d03f04177
-  - enabled: 1
+  - enabled: 0
     path: Assets/0_HCC Kitchen/Scenes/IAR Kitchen.unity
     guid: a472842bca4f20040a49307c3a50e0eb
   m_configObjects:

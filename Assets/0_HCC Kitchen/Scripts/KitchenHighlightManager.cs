@@ -65,6 +65,14 @@ public class KitchenHighlightManager : MonoBehaviour
     [Tooltip("Assign your XR Origin. Used for nearest-neighbour ordering.")]
     public Transform playerTransform;
 
+    [Header("━━ Mini Clones ━━━━━━━━━━━━━━━━━━━━━━━━")]
+    [Tooltip("Uniform scale applied to each mini clone relative to its original.")]
+    [SerializeField] private float miniCloneScale = 0.05f;
+
+    [Tooltip("Offset in TMP local space to place the mini clone relative to the text line centre. " +
+             "Positive X moves it to the right of the text on the panel.")]
+    [SerializeField] private Vector3 miniCloneLocalOffset = new Vector3(0.12f, 0f, -0.01f);
+
     [SerializeField]
     [Header("Tags to include for trials")]
     private string[] tags; // Array of TagField references for validation (optional)
@@ -74,6 +82,7 @@ public class KitchenHighlightManager : MonoBehaviour
 
     [SerializeField]
     private TextMeshProUGUI menuTextSecondPage; // For debugging: formatted string of current targets
+
     // ─────────────────────────────────────────────────────────────────────
     // INTERNAL STATE
     // ─────────────────────────────────────────────────────────────────────
@@ -88,6 +97,9 @@ public class KitchenHighlightManager : MonoBehaviour
 
     private HighlightType _lastHighlightType = (HighlightType)(-1);
     private TargetingMode _lastTargetingMode = (TargetingMode)(-1);
+
+    // Tracks all spawned mini clones so they can be destroyed on next CreateTrialList call
+    private List<GameObject> _miniClones = new List<GameObject>();
 
     private static readonly string[] ColumnNamesStudy = { "U_Frame", "HighlightType", "TargetingMode", "RemainingTargets", "CollectedItem", "CollectedItemTag", "CollectedItemPosition", "WasHighlighted"};
 
@@ -138,6 +150,9 @@ public class KitchenHighlightManager : MonoBehaviour
 
     public void CreateTrialList(int permutationIndex = -1)
     {
+        // Destroy any mini clones from a previous call
+        ClearMiniClones();
+
         // For this experiment, we want to read the permutations from the CSV file
         string trialPermutation = ReadPermutations(permutationIndex);
 
@@ -168,8 +183,6 @@ public class KitchenHighlightManager : MonoBehaviour
         int dryIndex   = int.Parse(indices[1]);
         int spiceIndex = int.Parse(indices[2]);
 
-        
-
         targets = new List<ItemHighlight>();
 
         // Collect items from each group
@@ -179,29 +192,21 @@ public class KitchenHighlightManager : MonoBehaviour
 
         for (int i = 0; i < canDefs.Length; i++)
         {
-            if (canDefs[i].groupIndex == canIndex && canDefs[i].canObject != null) {
+            if (canDefs[i].groupIndex == canIndex && canDefs[i].canObject != null)
                 canItems.Add(canDefs[i].canObject.GetComponent<ItemHighlight>());
-  
-                }
         }
         for (int i = 0; i < dryDefs.Length; i++)
         {
             if (dryDefs[i].groupIndex == dryIndex && dryDefs[i].boxObject != null)
-            {
                 dryItems.Add(dryDefs[i].boxObject.GetComponent<ItemHighlight>());
-       
-            }
         }
         for (int i = 0; i < spiceDefs.Length; i++)
         {
             if (spiceDefs[i].groupIndex == spiceIndex && spiceDefs[i].jarObject != null)
-            {
                 spiceItems.Add(spiceDefs[i].jarObject.GetComponent<ItemHighlight>());
-               
-            }
         }
 
-         // Add 4 random fridge items
+        // Add 4 random fridge items
         List<ItemHighlight> fridgeItems = AddRandomTaggedItems("fridge_item", 4);
         // Add 4 random kitchen items
         List<ItemHighlight> kitchenItems = AddRandomTaggedItems("kitchen_item", 4);
@@ -211,33 +216,25 @@ public class KitchenHighlightManager : MonoBehaviour
         ShuffleList(groupOrder);
 
         // Find positions of each group after shuffling
-        int canPosition = groupOrder.IndexOf(canItems);
-        int dryPosition = groupOrder.IndexOf(dryItems);
+        int canPosition   = groupOrder.IndexOf(canItems);
+        int dryPosition   = groupOrder.IndexOf(dryItems);
         int spicePosition = groupOrder.IndexOf(spiceItems);
-
-        
 
         // Add items in randomized group order
         foreach (var group in groupOrder)
-        {
             targets.AddRange(group);
-        }
 
         _targetGroups = groupOrder
-    .Select(group => group.Select(item => item.gameObject.name).ToArray())
-    .ToList();
+            .Select(group => group.Select(item => item.gameObject.name).ToArray())
+            .ToList();
 
-        // Take first 3 groups which are seperated by a completely blank line
+        // Update TMP text — first 3 groups on page 1, last 2 on page 2
         if (menuTextFirstPage != null)
-        {
             menuTextFirstPage.text = FormatTargetList(_targetGroups.Take(3).ToList());
-        }
         if (menuTextSecondPage != null)
-        {
             menuTextSecondPage.text = FormatTargetList(_targetGroups.Skip(3).Take(2).ToList());
-        }
 
-        // Decide which TMP holds which group
+        // ── Decide which TMP holds which group ──────────────────────────
         Vector3 GetWorldPosForGroup(int groupIndex)
         {
             if (groupIndex < 3)
@@ -253,7 +250,172 @@ public class KitchenHighlightManager : MonoBehaviour
         canManager.InstantiateBasicGroupGameObjects(canIndex, canPos);
         dryGoodsManager.InstantiateBasicGroupGameObjects(dryIndex, dryPos);
         spiceManager.InstantiateBasicGroupGameObjects(spiceIndex, spicePos);
+
+        // ── Spawn mini clones for fridge and kitchen items ───────────────
+        // Iterate every group; for fridge/kitchen groups find the correct TMP page
+        for (int groupIdx = 0; groupIdx < groupOrder.Count; groupIdx++)
+        {
+            List<ItemHighlight> group = groupOrder[groupIdx];
+
+            // Cans / dry goods / spices already have their own visual via InstantiateBasicGroupGameObjects
+            bool isFridgeGroup  = group == fridgeItems;
+            bool isKitchenGroup = group == kitchenItems;
+            if (!isFridgeGroup && !isKitchenGroup) continue;
+
+            // Determine which TMP page this group ended up on
+            TextMeshProUGUI targetTMP = groupIdx < 3 ? menuTextFirstPage : menuTextSecondPage;
+
+            //if (targetTMP != null)
+                //SpawnMiniClonesForGroup(group, targetTMP);
+        }
     }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // MINI CLONE HELPERS
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Destroys all previously spawned mini clones.
+    /// Called at the start of CreateTrialList so re-runs don't stack clones.
+    /// </summary>
+    private void ClearMiniClones()
+    {
+        foreach (var clone in _miniClones)
+        {
+            if (clone != null)
+                Destroy(clone);
+        }
+        _miniClones.Clear();
+    }
+
+    /// <summary>
+    /// For each item in the group, spawns a scaled-down clone of the scene object
+    /// positioned next to its name line in the given TMP.
+    /// </summary>
+    private void SpawnMiniClonesForGroup(List<ItemHighlight> group, TextMeshProUGUI tmp)
+    {
+        // Force the mesh to be up to date before querying character positions
+        tmp.ForceMeshUpdate();
+
+        foreach (ItemHighlight item in group)
+        {
+            if (item == null) continue;
+
+            Vector3 lineWorldPos = GetWorldPosForLineContaining(tmp, item.gameObject.name);
+
+            // Apply a local-space offset (converted to world space via the TMP's transform)
+            Vector3 worldOffset = tmp.transform.TransformVector(miniCloneLocalOffset);
+            Vector3 spawnPos    = lineWorldPos + worldOffset;
+
+            GameObject clone = CreateMiniClone(item.gameObject, spawnPos, miniCloneScale);
+            if (clone != null)
+                _miniClones.Add(clone);
+        }
+    }
+
+    /// <summary>
+    /// Finds the world-space centre of the TMP line that contains <paramref name="itemName"/>.
+    /// Falls back to the TMP transform position if the text cannot be located.
+    /// </summary>
+    private Vector3 GetWorldPosForLineContaining(TextMeshProUGUI tmp, string itemName)
+    {
+        tmp.ForceMeshUpdate();
+        TMP_TextInfo textInfo = tmp.textInfo;
+
+        // Find where this item name starts in the raw text string
+        int charIndex = tmp.text.IndexOf(itemName, StringComparison.Ordinal);
+        if (charIndex < 0)
+        {
+            Debug.LogWarning($"[MiniClone] Could not find '{itemName}' in TMP text.");
+            return tmp.transform.position;
+        }
+
+        // Identify which rendered line contains that character index
+        int targetLine = -1;
+        for (int i = 0; i < textInfo.lineCount; i++)
+        {
+            TMP_LineInfo li = textInfo.lineInfo[i];
+            int lineEnd = li.firstCharacterIndex + li.characterCount;
+            if (charIndex >= li.firstCharacterIndex && charIndex < lineEnd)
+            {
+                targetLine = i;
+                break;
+            }
+        }
+
+        if (targetLine < 0)
+        {
+            Debug.LogWarning($"[MiniClone] Could not map '{itemName}' to a TMP line.");
+            return tmp.transform.position;
+        }
+
+        TMP_LineInfo targetLineInfo = textInfo.lineInfo[targetLine];
+
+        // Compute the bounding box of visible characters on that line
+        Vector3 min = Vector3.positiveInfinity;
+        Vector3 max = Vector3.negativeInfinity;
+
+        int lastChar = targetLineInfo.firstCharacterIndex + targetLineInfo.characterCount;
+        for (int j = targetLineInfo.firstCharacterIndex; j < lastChar && j < textInfo.characterCount; j++)
+        {
+            if (!textInfo.characterInfo[j].isVisible) continue;
+            min = Vector3.Min(min, textInfo.characterInfo[j].bottomLeft);
+            max = Vector3.Max(max, textInfo.characterInfo[j].topRight);
+        }
+
+        // If no visible characters were found (e.g. blank line guard), use baseline
+        if (min == Vector3.positiveInfinity)
+        {
+            float baseline = targetLineInfo.baseline;
+            min = new Vector3(targetLineInfo.lineExtents.min.x, baseline, 0f);
+            max = new Vector3(targetLineInfo.lineExtents.max.x, baseline, 0f);
+        }
+
+        Vector3 localCentre = (min + max) / 2f;
+        return tmp.transform.TransformPoint(localCentre);
+    }
+
+    /// <summary>
+    /// Instantiates a stripped-down clone of <paramref name="original"/> at
+    /// <paramref name="worldPos"/>. All colliders, rigidbodies, and MonoBehaviour
+    /// components are disabled/made kinematic so the clone is purely visual.
+    /// </summary>
+    private GameObject CreateMiniClone(GameObject original, Vector3 worldPos, float scale)
+    {
+        if (original == null) return null;
+
+        // Clone with the original's world rotation so the model faces a natural direction
+        GameObject clone = Instantiate(original, worldPos, original.transform.rotation);
+
+        // Scale uniformly relative to the original's existing scale
+        clone.transform.localScale = original.transform.localScale * scale;
+
+        // ── Strip interactive components ─────────────────────────────────
+
+        // Disable all MonoBehaviours (ItemHighlight, XR interactables, custom scripts, etc.)
+        foreach (MonoBehaviour mb in clone.GetComponentsInChildren<MonoBehaviour>(includeInactive: true))
+            mb.enabled = false;
+
+        // Disable colliders so the clone doesn't interfere with physics or XR raycasts
+        foreach (Collider col in clone.GetComponentsInChildren<Collider>(includeInactive: true))
+            col.enabled = false;
+
+        // Make any Rigidbody kinematic so gravity / physics don't move it
+        foreach (Rigidbody rb in clone.GetComponentsInChildren<Rigidbody>(includeInactive: true))
+        {
+            rb.isKinematic = true;
+            rb.detectCollisions = false;
+        }
+
+        // Give the clone a descriptive name for easier debugging in the hierarchy
+        clone.name = $"[MiniClone] {original.name}";
+
+        return clone;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // EXISTING TMP HELPERS (unchanged)
+    // ─────────────────────────────────────────────────────────────────────
 
     private Vector3 GetGroupCenterFromTMP(TextMeshProUGUI tmp, int groupIndex)
     {
@@ -332,13 +494,10 @@ public class KitchenHighlightManager : MonoBehaviour
         foreach (var group in targetGroups)
         {
             foreach (var itemName in group)
-            {
                 result += itemName + "\n";
-            }
             result += "\n"; // Blank line between groups
         }
         return result;
-        
     }
 
     private string FormatTargetListWithCollected(List<string[]> targetGroups)
@@ -349,16 +508,11 @@ public class KitchenHighlightManager : MonoBehaviour
         {
             foreach (var itemName in group)
             {
-                // Check if this item has been collected
                 bool isCollected = _collectedItems.Any(item => item.gameObject.name == itemName);
                 if (isCollected)
-                {
-                    result += $"<color=#00FF00>{itemName}</color>\n"; // Green for collected
-                }
+                    result += $"<color=#00FF00>{itemName}</color>\n";
                 else
-                {
                     result += itemName + "\n";
-                }
             }
             result += "\n"; // Blank line between groups
         }
@@ -367,16 +521,10 @@ public class KitchenHighlightManager : MonoBehaviour
 
     private void UpdateTargetTextDisplay()
     {
-        // Update first page (first 3 groups)
         if (menuTextFirstPage != null)
-        {
             menuTextFirstPage.text = FormatTargetListWithCollected(_targetGroups.Take(3).ToList());
-        }
-        // Update second page (last 2 groups)
         if (menuTextSecondPage != null)
-        {
             menuTextSecondPage.text = FormatTargetListWithCollected(_targetGroups.Skip(3).Take(2).ToList());
-        }
     }
 
     private List<ItemHighlight> AddRandomTaggedItems(string tag, int count)
@@ -388,7 +536,6 @@ public class KitchenHighlightManager : MonoBehaviour
             return new List<ItemHighlight>();
         }
 
-        // Shuffle and pick up to count items that have ItemHighlight
         List<GameObject> shuffled = new List<GameObject>(allTagged);
         ShuffleList(shuffled);
 
@@ -405,7 +552,6 @@ public class KitchenHighlightManager : MonoBehaviour
             }
         }
 
-        //Debug.Log($"[Highlight] Found {added} random items with tag '{tag}'.");
         return addedItems;
     }
 
@@ -417,9 +563,9 @@ public class KitchenHighlightManager : MonoBehaviour
             (list[i], list[j]) = (list[j], list[i]);
         }
     }
+
     private string ReadPermutations(int permutationIndex = -1)
     {
-        // Get permutations.csv file
         string path = Path.Combine(Application.persistentDataPath, "Experiment Data");
         string fullPath = Path.Combine(path, "permutations.csv");
         if (!File.Exists(fullPath))
@@ -428,19 +574,15 @@ public class KitchenHighlightManager : MonoBehaviour
             return "";
         }
 
-        // Parse CSV to get list of permutations
         string[] lines = File.ReadAllLines(fullPath);
-//        Debug.Log($"[Highlight] Loaded permutations.csv with {lines.Length - 1} permutations.");
-        
-        // If no index specified, pick a random one
+
         if (permutationIndex < 0)
             permutationIndex = UnityEngine.Random.Range(1, lines.Length);
         else
             permutationIndex += 1; // Adjust for header row
-        
-        // Clamp to valid range
+
         permutationIndex = Mathf.Clamp(permutationIndex, 1, lines.Length - 1);
-        
+
         return lines[permutationIndex];
     }
 
@@ -494,11 +636,12 @@ public class KitchenHighlightManager : MonoBehaviour
         _collectedItems.Add(item);
 
         // Clear visual highlights then hide the item
-        if (item.disappearOnCollect) {
+        if (item.disappearOnCollect)
+        {
             item.ClearAll();
             item.gameObject.SetActive(false);
         }
-        
+
         Debug.Log($"[Highlight] Collected: {item.gameObject.name} " +
                   $"({_collectedItems.Count}/{targets.Count})");
 
@@ -527,7 +670,6 @@ public class KitchenHighlightManager : MonoBehaviour
         _collectedItems.Clear();
         _trialActive = true;
 
-        // Re-show all items that were hidden by previous trial
         foreach (var t in targets)
             if (t != null) t.gameObject.SetActive(true);
 
@@ -581,10 +723,7 @@ public class KitchenHighlightManager : MonoBehaviour
         switch (targetingMode)
         {
             case TargetingMode.All:
-                {
-                    List<ItemHighlight> remaining = GetRemainingOrdered();
-                    return remaining;
-                }
+                return GetRemainingOrdered();
 
             case TargetingMode.Sequential:
                 {
@@ -615,7 +754,7 @@ public class KitchenHighlightManager : MonoBehaviour
         _collectedItems.Clear();
         RefreshHighlights();
     }
-    
+
     /// <summary>
     /// In subset mode, highlight all remaining targets sharing the tag of the first remaining target
     /// based on the original targets list order.
@@ -648,8 +787,8 @@ public class KitchenHighlightManager : MonoBehaviour
     {
         switch (type)
         {
-            case HighlightType.Circle:  item.SetCircle(true);  break;
-            case HighlightType.Arrow:   item.SetArrow(true);   break;
+            case HighlightType.Circle: item.SetCircle(true); break;
+            case HighlightType.Arrow:  item.SetArrow(true);  break;
         }
     }
 
@@ -711,16 +850,12 @@ public class KitchenHighlightManager : MonoBehaviour
         if (remaining.Count == 0)
             return null;
 
-        // If no items collected yet, return the first item in the ordered list
         if (_collectedItems.Count == 0)
             return remaining[0];
 
-        // Find the last collected item's position to search from
         Vector3 searchFromPos = Vector3.zero;
         bool foundLastCollected = false;
 
-        // Get the position of the most recently collected item
-        // (iterate backwards through _orderedTargets to find the last one that was collected)
         for (int i = _orderedTargets.Count - 1; i >= 0; i--)
         {
             if (_orderedTargets[i] != null && _collectedItems.Contains(_orderedTargets[i]))
@@ -731,19 +866,15 @@ public class KitchenHighlightManager : MonoBehaviour
             }
         }
 
-        // If somehow we can't find the last collected item, fall back to first remaining
         if (!foundLastCollected)
             return remaining[0];
 
-        // Find nearest uncollected target from the last collected item's position
         ItemHighlight nearest = null;
         float nearestDist = float.MaxValue;
 
         foreach (var item in remaining)
         {
-            if (item == null)
-                continue;
-
+            if (item == null) continue;
             float dist = Vector3.Distance(searchFromPos, item.transform.position);
             if (dist < nearestDist)
             {

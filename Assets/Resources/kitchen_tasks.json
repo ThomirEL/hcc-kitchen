@@ -45,7 +45,7 @@
       "steps": [
         {
           "stepNumber": 1,
-          "description": "Grab the knife from the drawer",
+          "description": "Grab the knife from the countertop",
           "objectsUsed": [
             {
               "objectName": "Knife",
@@ -107,7 +107,7 @@
         },
         {
           "stepNumber": 6,
-          "description": "Place lettuce leaves in the salad bowl",
+          "description": "Place lettuce in the salad bowl",
           "objectsUsed": [
             {
               "objectName": "Lettuce",

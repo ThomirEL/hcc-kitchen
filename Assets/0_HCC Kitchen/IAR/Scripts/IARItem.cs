@@ -7,7 +7,6 @@ using UnityEngine;
 // For all interactions with items
 public class IARItem : MonoBehaviour
 {
-
     void Start()
     {
         IARInteractionDatabase.Instance.RegisterPart(gameObject.name, GetComponent<IARPart>());
@@ -17,8 +16,14 @@ public class IARItem : MonoBehaviour
         grab.selectExited.AddListener(_  => ReportState("held", false));
     }
 
+    void OnDestroy()
+    {
+        // Clean up so destroyed objects don't stay in the registry
+        IARInteractionDatabase.Instance?.GetParts(gameObject.name)?.Remove(GetComponent<IARPart>());
+    }
+
     void ReportState(string state, bool active)
     {
-        IARInteractionDatabase.Instance.OnStateChanged(gameObject.name, state, active);
+        IARInteractionDatabase.Instance.OnStateChanged(gameObject.name, state, active, gameObject);
     }
 }

@@ -124,6 +124,7 @@ GameObject:
   - component: {fileID: 215839885925629014}
   - component: {fileID: 7599569796614299606}
   - component: {fileID: 5258205982820299966}
+  - component: {fileID: 4409909049140606655}
   m_Layer: 0
   m_Name: default
   m_TagString: Untagged
@@ -224,6 +225,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.594554, y: 1.900641, z: 1.523105}
   m_Center: {x: 0.013461977, y: 0.9503205, z: 0.010357499}
+--- !u!114 &4409909049140606655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5679185244511491286}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02071c20d118f8240afd33f3d07bf6c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DOITextureSetup
+  downsampleFactor: 8
+  blurPasses: 2
+  renderFace: 1
 --- !u!1 &6608328255184501296
 GameObject:
   m_ObjectHideFlags: 0
@@ -235,6 +251,8 @@ GameObject:
   - component: {fileID: 1090729339626196115}
   - component: {fileID: 4809128061425984864}
   - component: {fileID: 7167619576418203759}
+  - component: {fileID: 6874948985590546950}
+  - component: {fileID: 4167762575607710766}
   m_Layer: 0
   m_Name: Broccoli Chunk
   m_TagString: Untagged
@@ -414,6 +432,39 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &6874948985590546950
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6608328255184501296}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 864ef9c44b4431248909be5717d15f5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IARPart
+  _howCommon: 0.5
+  _howDangerous: 0
+  log: 1
+  overrideDOI: 0
+  currentDoI: 0.5
+  cachedRenderer: {fileID: 0}
+  cachedCollider: {fileID: 0}
+  selfContributionKey: 
+  selfContrubutionDuration: 0
+--- !u!114 &4167762575607710766
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6608328255184501296}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15de98997b784f24ea7b93c3ca0a5628, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IARItem
 --- !u!1 &7202544772754548231
 GameObject:
   m_ObjectHideFlags: 0

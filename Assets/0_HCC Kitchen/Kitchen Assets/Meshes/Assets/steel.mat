@@ -112,7 +112,7 @@ Material:
     - _Cull: 0
     - _CullMode: 2
     - _Cutoff: 0.5
-    - _DOI: 1
+    - _DOI: 0.7859
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0

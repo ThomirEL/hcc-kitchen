@@ -397,6 +397,8 @@ GameObject:
   - component: {fileID: 6510321060028668085}
   - component: {fileID: 5452875274971850670}
   - component: {fileID: 2008101114228797975}
+  - component: {fileID: 8062294475045735052}
+  - component: {fileID: 1989203291922020005}
   m_Layer: 0
   m_Name: Onion Chunk
   m_TagString: Untagged
@@ -576,6 +578,38 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &8062294475045735052
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8424031501266579933}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 864ef9c44b4431248909be5717d15f5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IARPart
+  _howCommon: 0.5
+  _howDangerous: 0
+  log: 0
+  currentDoI: 0.5
+  cachedRenderer: {fileID: 0}
+  cachedCollider: {fileID: 0}
+  selfContributionKey: 
+  selfContrubutionDuration: 0
+--- !u!114 &1989203291922020005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8424031501266579933}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15de98997b784f24ea7b93c3ca0a5628, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IARItem
 --- !u!1 &8790258074789375198
 GameObject:
   m_ObjectHideFlags: 0
@@ -588,6 +622,7 @@ GameObject:
   - component: {fileID: 2801739436782517682}
   - component: {fileID: 6761834658665619289}
   - component: {fileID: 625779703054354605}
+  - component: {fileID: 4516750777323118597}
   m_Layer: 0
   m_Name: default
   m_TagString: Untagged
@@ -688,3 +723,18 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.900727, y: 1.365205, z: 1.0986011}
   m_Center: {x: 0.000089496374, y: 0.6826025, z: -0.013600498}
+--- !u!114 &4516750777323118597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8790258074789375198}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02071c20d118f8240afd33f3d07bf6c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DOITextureSetup
+  downsampleFactor: 8
+  blurPasses: 2
+  renderFace: 1

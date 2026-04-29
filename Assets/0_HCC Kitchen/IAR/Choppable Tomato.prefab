@@ -364,6 +364,7 @@ GameObject:
   - component: {fileID: 2285479995244000525}
   - component: {fileID: 2142611558315893158}
   - component: {fileID: 2285884044840915750}
+  - component: {fileID: 8553107906350357131}
   m_Layer: 0
   m_Name: default
   m_TagString: Untagged
@@ -464,6 +465,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.8981367, y: 1.1505879, z: 0.9459629}
   m_Center: {x: 0.000058591362, y: 0.57529396, z: -0.0017604528}
+--- !u!114 &8553107906350357131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5253948020068669230}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02071c20d118f8240afd33f3d07bf6c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DOITextureSetup
+  downsampleFactor: 8
+  blurPasses: 2
+  renderFace: 1
 --- !u!1 &8457286593435507285
 GameObject:
   m_ObjectHideFlags: 0
@@ -475,13 +491,15 @@ GameObject:
   - component: {fileID: 3854757052350564740}
   - component: {fileID: 2853822412114121161}
   - component: {fileID: 6154683626408698534}
+  - component: {fileID: 1617914994019629757}
+  - component: {fileID: 1181287860391221844}
   m_Layer: 0
   m_Name: tomato chunk
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &3854757052350564740
 Transform:
   m_ObjectHideFlags: 0
@@ -654,3 +672,35 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &1617914994019629757
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8457286593435507285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 864ef9c44b4431248909be5717d15f5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IARPart
+  _howCommon: 0.5
+  _howDangerous: 0
+  log: 0
+  currentDoI: 0.5
+  cachedRenderer: {fileID: 0}
+  cachedCollider: {fileID: 0}
+  selfContributionKey: 
+  selfContrubutionDuration: 0
+--- !u!114 &1181287860391221844
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8457286593435507285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15de98997b784f24ea7b93c3ca0a5628, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IARItem

@@ -87,14 +87,14 @@
         { "item": "Steak",        "key": "fork.held", "value": 0.7 },
         { "item": "Spaghetti",    "key": "fork.held", "value": 0.8 },
         { "item": "Penne",        "key": "fork.held", "value": 0.8 },
-        { "item": "Bowls",        "key": "fork.held", "value": 0.5 },
+        { "item": "Bowl",        "key": "fork.held", "value": 0.5 },
         { "item": "Spoon",        "key": "fork.held", "value": 0.5 }
       ]
     },
     {
       "trigger": { "item": "Spoon", "state": "held" },
       "effects": [
-        { "item": "Bowls",          "key": "spoon.held", "value": 0.8 },
+        { "item": "Bowl",          "key": "spoon.held", "value": 0.8 },
         { "item": "Yoghurt",        "key": "spoon.held", "value": 0.8 },
         { "item": "Fruit Cocktail", "key": "spoon.held", "value": 0.8 },
         { "item": "Rice",           "key": "spoon.held", "value": 0.7 },
@@ -104,24 +104,24 @@
       ]
     },
     {
-      "trigger": { "item": "Bowls", "state": "held" },
+      "trigger": { "item": "Bowl", "state": "held" },
       "effects": [
-        { "item": "Eggs",             "key": "bowls.held", "value": 0.8 },
-        { "item": "Flour",            "key": "bowls.held", "value": 0.7 },
-        { "item": "Yoghurt",          "key": "bowls.held", "value": 0.7 },
-        { "item": "Tuna Chunks",      "key": "bowls.held", "value": 0.7 },
-        { "item": "Rice",             "key": "bowls.held", "value": 0.6 },
-        { "item": "Fruit Cocktail",   "key": "bowls.held", "value": 0.6 },
-        { "item": "Canned Peas",      "key": "bowls.held", "value": 0.5 }
+        { "item": "Eggs",             "key": "Bowl.held", "value": 0.8 },
+        { "item": "Flour",            "key": "Bowl.held", "value": 0.7 },
+        { "item": "Yoghurt",          "key": "Bowl.held", "value": 0.7 },
+        { "item": "Tuna Chunks",      "key": "Bowl.held", "value": 0.7 },
+        { "item": "Rice",             "key": "Bowl.held", "value": 0.6 },
+        { "item": "Fruit Cocktail",   "key": "Bowl.held", "value": 0.6 },
+        { "item": "Canned Peas",      "key": "Bowl.held", "value": 0.5 }
       ]
     },
     {
-      "trigger": { "item": "Glasses", "state": "held" },
+      "trigger": { "item": "Glass", "state": "held" },
       "effects": [
-        { "item": "Juice",  "key": "glasses.held", "value": 0.9 },
-        { "item": "Milk",   "key": "glasses.held", "value": 0.8 },
-        { "item": "Fanta",  "key": "glasses.held", "value": 0.9 },
-        { "item": "Cola",   "key": "glasses.held", "value": 0.9 }
+        { "item": "Juice",  "key": "Glass.held", "value": 0.9 },
+        { "item": "Milk",   "key": "Glass.held", "value": 0.8 },
+        { "item": "Fanta",  "key": "Glass.held", "value": 0.9 },
+        { "item": "Cola",   "key": "Glass.held", "value": 0.9 }
       ]
     },
     {
@@ -132,7 +132,7 @@
         { "item": "Flour",        "key": "eggs.held", "value": 0.7 },
         { "item": "Almond Flour", "key": "eggs.held", "value": 0.7 },
         { "item": "Milk",         "key": "eggs.held", "value": 0.7 },
-        { "item": "Bowls",        "key": "eggs.held", "value": 0.8 },
+        { "item": "Bowl",        "key": "eggs.held", "value": 0.8 },
         { "item": "Cream",        "key": "eggs.held", "value": 0.5 }
       ]
     },
@@ -147,7 +147,6 @@
         { "item": "Rosemary",      "key": "steak.held", "value": 0.8 },
         { "item": "Thyme",         "key": "steak.held", "value": 0.7 },
         { "item": "Pepper",        "key": "steak.held", "value": 0.9 },
-        { "item": "Pepper","key": "steak.held", "value": 0.9 },
         { "item": "Salt",  "key": "steak.held", "value": 0.9 },
         { "item": "Tongs",         "key": "steak.held", "value": 0.8 },
         { "item": "Soy",           "key": "steak.held", "value": 0.6 }
@@ -184,8 +183,8 @@
         { "item": "Flour",        "key": "milk.held", "value": 0.7 },
         { "item": "Almond Flour", "key": "milk.held", "value": 0.7 },
         { "item": "Butter",       "key": "milk.held", "value": 0.5 },
-        { "item": "Bowls",        "key": "milk.held", "value": 0.5 },
-        { "item": "Glasses",      "key": "milk.held", "value": 0.8 }
+        { "item": "Bowl",        "key": "milk.held", "value": 0.5 },
+        { "item": "Glass",      "key": "milk.held", "value": 0.8 }
       ]
     },
     {
@@ -280,6 +279,18 @@
         { "item": "Tomato",        "key": "thyme.held", "value": 0.6 },
         { "item": "Mushroom Stew", "key": "thyme.held", "value": 0.8 },
         { "item": "Butter",        "key": "thyme.held", "value": 0.6 }
+      ]
+    },
+    {
+      "trigger": { "item": "Mug", "state": "held" },
+      "effects": [
+        { "item": "Milk", "key": "mug.held", "value": 0.9 },
+        { "item": "Cream", "key": "mug.held", "value": 0.85 },
+        { "item": "Yoghurt", "key": "mug.held", "value": 0.4 },
+
+        { "item": "Cola", "key": "mug.held", "value": 0.2 },
+        { "item": "Fanta", "key": "mug.held", "value": 0.2 },
+        { "item": "Juice", "key": "mug.held", "value": 0.3 }
       ]
     },
     {
@@ -405,14 +416,6 @@
       ]
     },
     {
-      "trigger": { "item": "Pepper", "state": "held" },
-      "effects": [
-        { "item": "Salt", "key": "Pepper.held", "value": 0.9 },
-        { "item": "Steak",        "key": "Pepper.held", "value": 0.9 },
-        { "item": "Eggs",         "key": "Pepper.held", "value": 0.7 }
-      ]
-    },
-    {
       "trigger": { "item": "Salt", "state": "held" },
       "effects": [
         { "item": "Pepper","key": "Salt.held", "value": 0.9 },
@@ -459,7 +462,7 @@
         { "item": "Milk",         "key": "flour.held", "value": 0.7 },
         { "item": "Butter",       "key": "flour.held", "value": 0.7 },
         { "item": "Almond Flour", "key": "flour.held", "value": 0.6 },
-        { "item": "Bowls",        "key": "flour.held", "value": 0.7 }
+        { "item": "Bowl",        "key": "flour.held", "value": 0.7 }
       ]
     },
     {
@@ -468,7 +471,7 @@
         { "item": "Eggs",   "key": "almond_flour.held", "value": 0.8 },
         { "item": "Butter", "key": "almond_flour.held", "value": 0.7 },
         { "item": "Flour",  "key": "almond_flour.held", "value": 0.6 },
-        { "item": "Bowls",  "key": "almond_flour.held", "value": 0.7 }
+        { "item": "Bowl",  "key": "almond_flour.held", "value": 0.7 }
       ]
     },
     {
@@ -514,7 +517,7 @@
         { "item": "Pots",      "key": "quinoa.held", "value": 0.9 },
         { "item": "Coriander", "key": "quinoa.held", "value": 0.6 },
         { "item": "Cumin",     "key": "quinoa.held", "value": 0.6 },
-        { "item": "Bowls",     "key": "quinoa.held", "value": 0.6 }
+        { "item": "Bowl",     "key": "quinoa.held", "value": 0.6 }
       ]
     },
     {
@@ -570,7 +573,7 @@
     {
       "trigger": { "item": "Tuna Chunks", "state": "held" },
       "effects": [
-        { "item": "Bowls",    "key": "tuna_chunks.held", "value": 0.8 },
+        { "item": "Bowl",    "key": "tuna_chunks.held", "value": 0.8 },
         { "item": "Mayo",     "key": "tuna_chunks.held", "value": 0.9 },
         { "item": "Fork",     "key": "tuna_chunks.held", "value": 0.8 },
         { "item": "Soy",      "key": "tuna_chunks.held", "value": 0.6 },
@@ -582,7 +585,7 @@
       "effects": [
         { "item": "Pots",         "key": "tomato_soup.held", "value": 0.9 },
         { "item": "Cream",        "key": "tomato_soup.held", "value": 0.8 },
-        { "item": "Bowls",        "key": "tomato_soup.held", "value": 0.7 },
+        { "item": "Bowl",        "key": "tomato_soup.held", "value": 0.7 },
         { "item": "Wooden Spoon", "key": "tomato_soup.held", "value": 0.8 }
       ]
     },
@@ -601,21 +604,21 @@
       "effects": [
         { "item": "Pots",  "key": "baked_beans.held", "value": 0.8 },
         { "item": "Pans",  "key": "baked_beans.held", "value": 0.7 },
-        { "item": "Bowls", "key": "baked_beans.held", "value": 0.7 }
+        { "item": "Bowl", "key": "baked_beans.held", "value": 0.7 }
       ]
     },
     {
       "trigger": { "item": "Canned Peas", "state": "held" },
       "effects": [
         { "item": "Rice",        "key": "canned_peas.held", "value": 0.7 },
-        { "item": "Bowls",       "key": "canned_peas.held", "value": 0.6 },
+        { "item": "Bowl",       "key": "canned_peas.held", "value": 0.6 },
         { "item": "Tuna Chunks", "key": "canned_peas.held", "value": 0.7 }
       ]
     },
     {
       "trigger": { "item": "Sweet Corn", "state": "held" },
       "effects": [
-        { "item": "Bowls",  "key": "sweet_corn.held", "value": 0.7 },
+        { "item": "Bowl",  "key": "sweet_corn.held", "value": 0.7 },
         { "item": "Butter", "key": "sweet_corn.held", "value": 0.8 },
         { "item": "Rice",   "key": "sweet_corn.held", "value": 0.6 }
       ]
@@ -623,7 +626,7 @@
     {
       "trigger": { "item": "Corn Kernels", "state": "held" },
       "effects": [
-        { "item": "Bowls",  "key": "corn_kernels.held", "value": 0.7 },
+        { "item": "Bowl",  "key": "corn_kernels.held", "value": 0.7 },
         { "item": "Butter", "key": "corn_kernels.held", "value": 0.7 },
         { "item": "Rice",   "key": "corn_kernels.held", "value": 0.6 }
       ]
@@ -646,7 +649,7 @@
     {
       "trigger": { "item": "Yoghurt", "state": "held" },
       "effects": [
-        { "item": "Bowls",          "key": "yoghurt.held", "value": 0.8 },
+        { "item": "Bowl",          "key": "yoghurt.held", "value": 0.8 },
         { "item": "Fruit Cocktail", "key": "yoghurt.held", "value": 0.9 },
         { "item": "Peach Slices",   "key": "yoghurt.held", "value": 0.8 },
         { "item": "Cherry Compote", "key": "yoghurt.held", "value": 0.8 },
@@ -659,7 +662,7 @@
       "trigger": { "item": "Peach Slices", "state": "held" },
       "effects": [
         { "item": "Yoghurt",        "key": "peach_slices.held", "value": 0.8 },
-        { "item": "Bowls",          "key": "peach_slices.held", "value": 0.7 },
+        { "item": "Bowl",          "key": "peach_slices.held", "value": 0.7 },
         { "item": "Cherry Compote", "key": "peach_slices.held", "value": 0.7 },
         { "item": "Fruit Cocktail", "key": "peach_slices.held", "value": 0.7 }
       ]
@@ -667,7 +670,7 @@
     {
       "trigger": { "item": "Pineapple Chunks", "state": "held" },
       "effects": [
-        { "item": "Bowls",          "key": "pineapple_chunks.held", "value": 0.7 },
+        { "item": "Bowl",          "key": "pineapple_chunks.held", "value": 0.7 },
         { "item": "Fruit Cocktail", "key": "pineapple_chunks.held", "value": 0.8 },
         { "item": "Yoghurt",        "key": "pineapple_chunks.held", "value": 0.7 }
       ]
@@ -675,7 +678,7 @@
     {
       "trigger": { "item": "Fruit Cocktail", "state": "held" },
       "effects": [
-        { "item": "Bowls",   "key": "fruit_cocktail.held", "value": 0.8 },
+        { "item": "Bowl",   "key": "fruit_cocktail.held", "value": 0.8 },
         { "item": "Yoghurt", "key": "fruit_cocktail.held", "value": 0.9 },
         { "item": "Spoon",   "key": "fruit_cocktail.held", "value": 0.7 }
       ]
@@ -684,7 +687,7 @@
       "trigger": { "item": "Cherry Compote", "state": "held" },
       "effects": [
         { "item": "Yoghurt",      "key": "cherry_compote.held", "value": 0.9 },
-        { "item": "Bowls",        "key": "cherry_compote.held", "value": 0.7 },
+        { "item": "Bowl",        "key": "cherry_compote.held", "value": 0.7 },
         { "item": "Spoon",        "key": "cherry_compote.held", "value": 0.7 },
         { "item": "Peach Slices", "key": "cherry_compote.held", "value": 0.6 }
       ]
@@ -693,7 +696,7 @@
       "trigger": { "item": "Ketchup", "state": "held" },
       "effects": [
         { "item": "Steak",       "key": "ketchup.held", "value": 0.7 },
-        { "item": "Bowls",       "key": "ketchup.held", "value": 0.5 },
+        { "item": "Bowl",       "key": "ketchup.held", "value": 0.5 },
         { "item": "Tuna Chunks", "key": "ketchup.held", "value": 0.5 }
       ]
     },
@@ -703,13 +706,13 @@
         { "item": "Tuna Chunks", "key": "mayo.held", "value": 0.9 },
         { "item": "Steak",       "key": "mayo.held", "value": 0.5 },
         { "item": "Carrot",      "key": "mayo.held", "value": 0.6 },
-        { "item": "Bowls",       "key": "mayo.held", "value": 0.5 }
+        { "item": "Bowl",       "key": "mayo.held", "value": 0.5 }
       ]
     },
     {
       "trigger": { "item": "Leftovers", "state": "held" },
       "effects": [
-        { "item": "Bowls",        "key": "leftovers.held", "value": 0.8 },
+        { "item": "Bowl",        "key": "leftovers.held", "value": 0.8 },
         { "item": "Aluminum Foil","key": "leftovers.held", "value": 0.9 },
         { "item": "Plastic Wrap", "key": "leftovers.held", "value": 0.9 },
         { "item": "Pots",         "key": "leftovers.held", "value": 0.7 },
@@ -730,36 +733,36 @@
         { "item": "Leftovers", "key": "plastic_wrap.held", "value": 0.9 },
         { "item": "Cheese",    "key": "plastic_wrap.held", "value": 0.7 },
         { "item": "Tomato",    "key": "plastic_wrap.held", "value": 0.6 },
-        { "item": "Bowls",     "key": "plastic_wrap.held", "value": 0.5 }
+        { "item": "Bowl",     "key": "plastic_wrap.held", "value": 0.5 }
       ]
     },
     {
       "trigger": { "item": "Juice", "state": "held" },
       "effects": [
-        { "item": "Glasses", "key": "juice.held", "value": 0.9 }
+        { "item": "Glass", "key": "juice.held", "value": 0.9 }
       ]
     },
     {
       "trigger": { "item": "Fanta", "state": "held" },
       "effects": [
-        { "item": "Glasses", "key": "fanta.held", "value": 0.9 },
+        { "item": "Glass", "key": "fanta.held", "value": 0.9 },
         { "item": "Cola",    "key": "fanta.held", "value": 0.5 }
       ]
     },
     {
       "trigger": { "item": "Cola", "state": "held" },
       "effects": [
-        { "item": "Glasses", "key": "cola.held", "value": 0.9 },
+        { "item": "Glass", "key": "cola.held", "value": 0.9 },
         { "item": "Fanta",   "key": "cola.held", "value": 0.5 }
       ]
     },
     {
       "trigger": { "item": "Dish Sponge", "state": "held" },
       "effects": [
-        { "item": "Bowls",        "key": "dish_sponge.held", "value": 0.8 },
+        { "item": "Bowl",        "key": "dish_sponge.held", "value": 0.8 },
         { "item": "Pots",         "key": "dish_sponge.held", "value": 0.8 },
         { "item": "Pans",         "key": "dish_sponge.held", "value": 0.8 },
-        { "item": "Glasses",      "key": "dish_sponge.held", "value": 0.8 },
+        { "item": "Glass",      "key": "dish_sponge.held", "value": 0.8 },
         { "item": "Dish Cloths",  "key": "dish_sponge.held", "value": 0.7 }
       ]
     },
@@ -768,16 +771,16 @@
       "effects": [
         { "item": "Dish Sponge",  "key": "dish_cloths.held", "value": 0.7 },
         { "item": "Drying Towel", "key": "dish_cloths.held", "value": 0.7 },
-        { "item": "Bowls",        "key": "dish_cloths.held", "value": 0.6 },
-        { "item": "Glasses",      "key": "dish_cloths.held", "value": 0.6 }
+        { "item": "Bowl",        "key": "dish_cloths.held", "value": 0.6 },
+        { "item": "Glass",      "key": "dish_cloths.held", "value": 0.6 }
       ]
     },
     {
       "trigger": { "item": "Drying Towel", "state": "held" },
       "effects": [
         { "item": "Dish Cloths",  "key": "drying_towel.held", "value": 0.7 },
-        { "item": "Bowls",        "key": "drying_towel.held", "value": 0.7 },
-        { "item": "Glasses",      "key": "drying_towel.held", "value": 0.7 },
+        { "item": "Bowl",        "key": "drying_towel.held", "value": 0.7 },
+        { "item": "Glass",      "key": "drying_towel.held", "value": 0.7 },
         { "item": "Pots",         "key": "drying_towel.held", "value": 0.6 },
         { "item": "Pans",         "key": "drying_towel.held", "value": 0.6 }
       ]

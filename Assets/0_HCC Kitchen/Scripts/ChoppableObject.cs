@@ -48,6 +48,20 @@ public class ChoppableObject : MonoBehaviour
             grabInteractable.interactionManager.CancelInteractableSelection(
                 (IXRSelectInteractable)grabInteractable);
 
+        Shader doiShader = Shader.Find("Custom/URP_DOI_Master");
+
+        // // Get doi renderer of child
+        // var doiRenderer = GetComponentInChildren<Renderer>();
+        // if (doiRenderer != null)
+        // {
+        //     doiShader = doiRenderer.material.shader;
+        // }
+        // else
+        // {
+        //     Debug.LogWarning($"[ChoppableObject] {gameObject.name}: No Renderer found for DOI shader reference, using default.");
+        // }
+        // var DOI_Value = doiRenderer != null ? doiRenderer.material.GetFloat("_DOI") : 1f;
+
         SpawnChunks(contactPoint, knifeVelocity);
 
         Destroy(gameObject);
@@ -72,14 +86,14 @@ public class ChoppableObject : MonoBehaviour
             Rigidbody chunkRb = chunk.GetComponent<Rigidbody>();
             if (chunkRb == null) chunkRb = chunk.AddComponent<Rigidbody>();
 
-            // Add XRGrabInteractable so player can pick up and toss chunks
-            if (chunk.GetComponent<XRGrabInteractable>() == null)
-                chunk.AddComponent<XRGrabInteractable>();
-
             // Tag chunks for identification by other systems (e.g., bowl detection) to it and all children
             chunk.tag = "Chunk";
             foreach (Transform child in chunk.transform)
                 child.gameObject.tag = "Chunk";
+
+            // Apply the DOI material properties to child of each chunk
+            chunk.GetComponent<IARPart>().overrideDOI = true;
+
 
             // Scatter force: inherit knife direction + random spread
             Vector3 scatter = (knifeVelocity.normalized + Random.insideUnitSphere * 0.4f)

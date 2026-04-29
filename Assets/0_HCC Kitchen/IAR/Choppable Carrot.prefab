@@ -47,6 +47,9 @@ GameObject:
   - component: {fileID: 6859106452580335069}
   - component: {fileID: 7737194095589675299}
   - component: {fileID: 4903223054602640643}
+  - component: {fileID: 7704729386949054050}
+  - component: {fileID: 8495766442131749927}
+  - component: {fileID: 5068398040290156861}
   m_Layer: 0
   m_Name: Carrot Chunk
   m_TagString: Untagged
@@ -102,7 +105,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 4397901453644911984, guid: cfe4fc36db2a00a478a6710172ca5767, type: 3}
+  - {fileID: 2100000, guid: d7b9dcc69c5a8314aa37ea14d77135d0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -303,6 +306,53 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &7704729386949054050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5353928597351557396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02071c20d118f8240afd33f3d07bf6c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DOITextureSetup
+  downsampleFactor: 8
+  blurPasses: 2
+  renderFace: 1
+--- !u!114 &8495766442131749927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5353928597351557396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 864ef9c44b4431248909be5717d15f5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IARPart
+  _howCommon: 0.5
+  _howDangerous: 0
+  log: 0
+  currentDoI: 0.5
+  cachedRenderer: {fileID: 0}
+  cachedCollider: {fileID: 0}
+  selfContributionKey: 
+  selfContrubutionDuration: 0
+--- !u!114 &5068398040290156861
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5353928597351557396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15de98997b784f24ea7b93c3ca0a5628, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IARItem
 --- !u!1001 &6897545467594103926
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -351,6 +401,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5765823425292724482, guid: af9972c4a81d606449283017fb1ea27f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: d7b9dcc69c5a8314aa37ea14d77135d0, type: 2}
     - target: {fileID: 7881477101608024585, guid: af9972c4a81d606449283017fb1ea27f, type: 3}
       propertyPath: m_Name
       value: Carrot

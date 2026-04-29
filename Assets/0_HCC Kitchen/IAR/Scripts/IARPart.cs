@@ -119,7 +119,7 @@ public class IARPart : MonoBehaviour
         }
     }
 
-    [Range(1,5)] private int? _stepsInToFuture;
+    private int? _stepsInToFuture;
 
     public int? StepsInToFuture
     {
@@ -133,6 +133,8 @@ public class IARPart : MonoBehaviour
     }
 
     public bool log = false;
+
+    public bool overrideDOI = false;
 
     private Dictionary<string, float> _contributions = new();
 
@@ -168,13 +170,17 @@ public class IARPart : MonoBehaviour
 
     /// <summary>
     /// Looks up this GameObject's name in item_properties.json and applies
-    /// commonality and howDangerous if a match is found. The values are written
-    /// directly to the backing fields to avoid triggering DOI recalculation.
+    /// commonality and howDangerous if a match is found. Always uses the base name (first word)
+    /// so that variants like "Tomato" and "Tomato Chunk" load the same properties.
+    /// The values are written directly to the backing fields to avoid triggering DOI recalculation.
     /// Awake will call calculateThisDOI() once after this method completes.
     /// </summary>
     private void LoadPropertiesFromJson(string itemName)
     {
-        if (ItemPropertiesLoader.TryGetProperties(itemName, out float commonality, out float howDangerous))
+        // Always use base name (first word) for variants like "Tomato" and "Tomato Chunk"
+        string baseName = GetBaseItemName(itemName);
+        
+        if (ItemPropertiesLoader.TryGetProperties(baseName, out float commonality, out float howDangerous))
         {
             // Write directly to backing fields — don't use properties to avoid triggering calculateThisDOI.
             // Awake() will call calculateThisDOI() once after all properties are loaded.
@@ -182,12 +188,18 @@ public class IARPart : MonoBehaviour
             _howDangerous = howDangerous;
 
             if (log)
-                Debug.Log($"IARPart '{name}': loaded from JSON → commonality={commonality}, howDangerous={howDangerous}");
+                Debug.Log($"IARPart '{name}': loaded from JSON (base name '{baseName}') → commonality={commonality}, howDangerous={howDangerous}");
         }
         else
         {
-            Debug.LogWarning($"IARPart '{name}': no JSON entry found for '{itemName}', using Inspector values.");
+            Debug.LogWarning($"IARPart '{name}': no JSON entry found for '{baseName}', using Inspector values.");
         }
+    }
+
+    private string GetBaseItemName(string itemName)
+    {
+        if (string.IsNullOrEmpty(itemName)) return itemName;
+        return itemName.Split(' ')[0];
     }
 
     private void GetTaskManager()
@@ -261,10 +273,33 @@ public class IARPart : MonoBehaviour
         calculateThisDOI("External recalculation");
     }
 
+    private IEnumerator LerpDOI(float targetDOI, float duration)
+    {
+        float time = 0f;
+        float initialDOI = currentDoI;
+
+        while (time < duration)
+        {
+            float t = time / duration;
+            currentDoI = Mathf.Lerp(initialDOI, targetDOI, t);
+            if (cachedRenderer != null && cachedRenderer.material != null)
+                cachedRenderer.material.SetFloat("_DOI", currentDoI);
+            time += Time.deltaTime;
+            yield return null;
+        }
+
+        currentDoI = targetDOI;
+        if (cachedRenderer != null && cachedRenderer.material != null)
+            cachedRenderer.material.SetFloat("_DOI", currentDoI);
+    }
+
     private void calculateThisDOI(string changedAspect = null)
     {
         var prevDOI = currentDoI;
+        var newDOI = CalculateDOI();
+
         currentDoI = CalculateDOI();
+        var GameObject = this.gameObject;
         if (log)
         Debug.Log($" Calculating DOI for {name} (changed aspect: {changedAspect}), DOI was {prevDOI} -> new DOI {currentDoI}, /n  Commonality: {HowCommon}, Danger: {HowDangerous}, Intent: {GetCombinedIntentInterest()}, InCurrentStep: {IsInCurrentStep}, StepsInToFuture: {StepsInToFuture}");
 
@@ -298,6 +333,9 @@ public class IARPart : MonoBehaviour
 
     public float CalculateDOI()
     {
+
+        if (overrideDOI) return 1f; // If override is enabled, skip calculation and return current DOI
+
         GetManager();
 
         if (manager == null)
@@ -372,28 +410,32 @@ public class IARPart : MonoBehaviour
         }
 
         List<string> currentStepObjects = taskManager.GetCurrentStepObjects();
-        //Debug.Log($"IARPart '{name}' checking current step relevance. Current step objects: {string.Join(", ", currentStepObjects)}");
+        string basePartName = GetBaseItemName(gameObject.name);
+        
         if (gameObject.name == "Chopping Knife")
         {
             Debug.Log($"IARPart '{name}' checking current step relevance. Current step objects: {string.Join(", ", currentStepObjects)}");
         }
-        if (currentStepObjects.Contains(gameObject.name))
+        
+        foreach (string objectName in currentStepObjects)
         {
-            if (log) Debug.Log($"{gameObject.name} is used in current step: {taskManager.CurrentStep.description}");
-            return 0.5f;
+            string baseObjectName = GetBaseItemName(objectName);
+            if (basePartName == baseObjectName)
+            {
+                if (log) Debug.Log($"{gameObject.name} is used in current step: {taskManager.CurrentStep.description}");
+                return manager.CurrentTaskRelevanceWeight * 0.5f;
+            }
         }
         return 0f;
     }
 
     public float AddDOIForFutureSteps(int howManyStepsAhead)
     {
-        // Maps: 1 step ahead → 1.0,  2 steps → 0.5,  3 steps → 0.0
-        // (howManyStepsAhead - 1) normalized over the range [1..3]
-        float t = (howManyStepsAhead - 1f) / 2f;
-        float distanceFactor = Mathf.Lerp(1f, 0f, t);
+        // Smooth exponential decay: 1 step → 0.70, 2 steps → 0.50, 3 steps → 0.35, 8 steps → 0.07
+        float distanceFactor = Mathf.Exp(-howManyStepsAhead * 0.35f);
 
         if (log) Debug.Log($"{gameObject.name} used in {howManyStepsAhead} step(s) ahead (bonus: {distanceFactor})");
-        return distanceFactor;
+        return manager.FutureTaskRelevanceWeight * distanceFactor;
     }
 
     private float CalculateStepDistanceFalloff(int stepDistance)

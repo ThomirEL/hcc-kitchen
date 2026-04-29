@@ -22,7 +22,7 @@ Shader "Custom/OverlayUnlit"
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
             ZTest Always
-            Cull Back
+            Cull Off
 
             HLSLPROGRAM
             #pragma vertex vert
