@@ -446,7 +446,8 @@
     {
       "trigger": { "item": "Oil", "state": "held" },
       "effects": [
-        { "item": "Pans",       "key": "Oil.held", "value": 0.9 },
+        { "item": "Big Pan",       "key": "Oil.held", "value": 0.9 },
+        { "item": "Pan",       "key": "Oil.held", "value": 0.9 },
         { "item": "Garlic",     "key": "Oil.held", "value": 0.8 },
         { "item": "Steak",      "key": "Oil.held", "value": 0.7 },
         { "item": "Carrot",     "key": "Oil.held", "value": 0.6 },

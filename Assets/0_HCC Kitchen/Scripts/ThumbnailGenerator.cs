@@ -59,7 +59,17 @@ public TMP_SpriteAsset SpriteAsset => _spriteAsset;
         // Initialise the TMP_SpriteAsset
         InitialiseSpriteAsset();
     }
+    /// <summary>
+    /// Returns a previously captured sprite by name, or null if not yet captured.
+    /// </summary>
+    public Sprite GetSprite(string name)
+    {
+        if (_nameToIndex.TryGetValue(name, out int index))
+            return _entries[index].sprite;
 
+        Debug.LogWarning($"[ThumbnailGenerator] No sprite captured for '{name}'");
+        return null;
+    }
     private void OnDestroy()
     {
         if (_rt != null) _rt.Release();

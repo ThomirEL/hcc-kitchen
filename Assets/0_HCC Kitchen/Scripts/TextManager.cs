@@ -6,6 +6,7 @@ using UnityEngine.XR.Interaction.Toolkit.Attachment;
 public class TextManager : MonoBehaviour
 {
 
+    public bool cubeGrabbed = false;
     private int step = 0;
 [SerializeField]
     GameObject textObject1;
@@ -26,6 +27,12 @@ public class TextManager : MonoBehaviour
 [SerializeField]
     GameObject startButton;
 
+
+    public void grabCube()
+    {
+        cubeGrabbed = true;
+    }
+    
     public void incrementIntroduction()
     {
         step++;
@@ -49,6 +56,13 @@ public class TextManager : MonoBehaviour
                 textObject3.SetActive(true);
                 break;
             case 3:
+                if (!cubeGrabbed)
+                {
+                    Debug.Log("Please grab the cube to proceed.");
+                    textObject3.GetComponent<TextMeshProUGUI>().text = "Try and grab the cube to proceed!";
+                    step--; // Stay on the same step
+                    return;
+                }
                 textObject3.SetActive(false);
                 textObject4.SetActive(true);
                 startButton.SetActive(true);

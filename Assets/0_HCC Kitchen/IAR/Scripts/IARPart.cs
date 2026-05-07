@@ -163,6 +163,7 @@ public class IARPart : MonoBehaviour
 
     void Start()
     {
+        this.gameObject.layer = LayerMask.NameToLayer("IARPart");
         // Calculate DOI after all Awake calls complete to ensure materials are properly initialized
         calculateThisDOI("Start");
     }
@@ -178,7 +179,7 @@ public class IARPart : MonoBehaviour
     private void LoadPropertiesFromJson(string itemName)
     {
         // Always use base name (first word) for variants like "Tomato" and "Tomato Chunk"
-        string baseName = GetBaseItemName(itemName);
+        string baseName = itemName;
         
         if (ItemPropertiesLoader.TryGetProperties(baseName, out float commonality, out float howDangerous))
         {
@@ -293,13 +294,35 @@ public class IARPart : MonoBehaviour
             cachedRenderer.material.SetFloat("_DOI", currentDoI);
     }
 
+ [HideInInspector] public bool IsInProximityRange = false;
+
+void OnEnable()  { IARManager.Instance?.RegisterPart(this);   }
+void OnDisable() { IARManager.Instance?.UnregisterPart(this);  }
+
+// ─── MODIFY CalculateProximity() ──────────────────────────────────────────
+private float CalculateProximity()
+{
+    // Fast path: skip the sqrt entirely when out of range
+    if (!IsInProximityRange) return 0f;
+
+    if (manager.LeftController == null || manager.RightController == null)
+        return 0f;
+
+    float distToLeft  = Vector3.Distance(transform.position, manager.LeftController.position);
+    float distToRight = Vector3.Distance(transform.position, manager.RightController.position);
+    float closest     = Mathf.Min(distToLeft, distToRight);
+
+    float proximityDOI = Mathf.Clamp01(1f - (closest / manager.ProximityRadius));
+
+    if (log) Debug.Log($"{gameObject.name} proximity DOI: {proximityDOI:F2} (dist: {closest:F2}m)");
+
+    return manager.ProximityWeight * proximityDOI;
+}
     private void calculateThisDOI(string changedAspect = null)
     {
         var prevDOI = currentDoI;
-        var newDOI = CalculateDOI();
 
         currentDoI = CalculateDOI();
-        var GameObject = this.gameObject;
         if (log)
         Debug.Log($" Calculating DOI for {name} (changed aspect: {changedAspect}), DOI was {prevDOI} -> new DOI {currentDoI}, /n  Commonality: {HowCommon}, Danger: {HowDangerous}, Intent: {GetCombinedIntentInterest()}, InCurrentStep: {IsInCurrentStep}, StepsInToFuture: {StepsInToFuture}");
 
@@ -349,6 +372,7 @@ public class IARPart : MonoBehaviour
         if (manager.Commonality)            DOI += CalculateCommonality();
         if (manager.Danger)                 DOI += CalculateDanger();
         if (manager.Intent)                 DOI += CalculateIntent();
+        if (manager.Proximity)              DOI += CalculateProximity();
         
         // Only calculate task relevance if this item is in the current recipe
         GetTaskManager();
@@ -360,6 +384,7 @@ public class IARPart : MonoBehaviour
 
         return Mathf.Clamp01(DOI);
     }
+
 
     private float CalculateDanger()
     {
@@ -431,6 +456,7 @@ public class IARPart : MonoBehaviour
 
     public float AddDOIForFutureSteps(int howManyStepsAhead)
     {
+        if (howManyStepsAhead <= 0) return 0f;
         // Smooth exponential decay: 1 step → 0.70, 2 steps → 0.50, 3 steps → 0.35, 8 steps → 0.07
         float distanceFactor = Mathf.Exp(-howManyStepsAhead * 0.35f);
 

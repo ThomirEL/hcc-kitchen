@@ -48,7 +48,7 @@
           "description": "Grab the knife from the countertop",
           "objectsUsed": [
             {
-              "objectName": "Knife",
+              "objectName": "ChoppingKnife",
               "action": "grab"
             }
           ]
@@ -62,7 +62,7 @@
               "action": "place"
             },
             {
-              "objectName": "ChoppingBoard",
+              "objectName": "Chopping Board",
               "action": "use_as_surface"
             }
           ]
@@ -72,7 +72,7 @@
           "description": "Chop the onion into small pieces",
           "objectsUsed": [
             {
-              "objectName": "Knife",
+              "objectName": "ChoppingKnife",
               "action": "chop"
             },
             {
@@ -96,7 +96,7 @@
           "description": "Chop the tomato into small pieces",
           "objectsUsed": [
             {
-              "objectName": "Knife",
+              "objectName": "Chopping Knife",
               "action": "chop"
             },
             {
@@ -114,7 +114,7 @@
               "action": "place"
             },
             {
-              "objectName": "SaladBowl",
+              "objectName": "Salad Bowl",
               "action": "fill"
             }
           ]
@@ -144,7 +144,7 @@
           "description": "Pour olive oil over the salad",
           "objectsUsed": [
             {
-              "objectName": "OliveOil",
+              "objectName": "Oil",
               "action": "pour"
             }
           ]

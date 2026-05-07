@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 using System.IO;
 using TMPro;
@@ -148,127 +149,110 @@ public class KitchenHighlightManager : MonoBehaviour
         Logging.Logger.RecordItemHighlights(msg);
     }
 
-    public void CreateTrialList(int permutationIndex = -1)
+   // ── Replace these two old fields at the top of your class ──────────
+// REMOVE: public TextMeshProUGUI menuTextFirstPage;
+// REMOVE: public TextMeshProUGUI menuTextSecondPage;
+// ADD:
+[SerializeField] private ItemListUI _firstPageList;
+[SerializeField] private ItemListUI _secondPageList;
+[SerializeField] private ThumbnailGenerator _thumbnailGenerator;
+
+public void CreateTrialList(int permutationIndex = -1)
+{
+    ClearMiniClones();
+
+    string trialPermutation = ReadPermutations(permutationIndex);
+
+    CanManager canManager           = CanManager.Instance;
+    DryGoodsManager dryGoodsManager = DryGoodsManager.Instance;
+    SpiceManager spiceManager       = SpiceManager.Instance;
+
+    if (canManager == null || dryGoodsManager == null || spiceManager == null)
     {
-        // Destroy any mini clones from a previous call
-        ClearMiniClones();
-
-        // For this experiment, we want to read the permutations from the CSV file
-        string trialPermutation = ReadPermutations(permutationIndex);
-
-        // Use singleton instances
-        CanManager canManager = CanManager.Instance;
-        DryGoodsManager dryGoodsManager = DryGoodsManager.Instance;
-        SpiceManager spiceManager = SpiceManager.Instance;
-
-        if (canManager == null || dryGoodsManager == null || spiceManager == null)
-        {
-            Debug.LogError("[Highlight] Could not find one or more item managers in the scene.");
-            return;
-        }
-
-        SpiceDefinition[] spiceDefs = spiceManager.spices;
-        CanDefinition[]   canDefs   = canManager.cans;
-        DryGoodsDefinition[] dryDefs = dryGoodsManager.dryGoods;
-
-        // Parse the permutation string to get the indices for each item type
-        string[] indices = trialPermutation.Split(',');
-        if (indices.Length != 3)
-        {
-            Debug.LogError($"[Highlight] Invalid permutation format: {trialPermutation}");
-            return;
-        }
-
-        int canIndex   = int.Parse(indices[0]);
-        int dryIndex   = int.Parse(indices[1]);
-        int spiceIndex = int.Parse(indices[2]);
-
-        targets = new List<ItemHighlight>();
-
-        // Collect items from each group
-        List<ItemHighlight> canItems = new List<ItemHighlight>();
-        List<ItemHighlight> dryItems = new List<ItemHighlight>();
-        List<ItemHighlight> spiceItems = new List<ItemHighlight>();
-
-        for (int i = 0; i < canDefs.Length; i++)
-        {
-            if (canDefs[i].groupIndex == canIndex && canDefs[i].canObject != null)
-                canItems.Add(canDefs[i].canObject.GetComponent<ItemHighlight>());
-        }
-        for (int i = 0; i < dryDefs.Length; i++)
-        {
-            if (dryDefs[i].groupIndex == dryIndex && dryDefs[i].boxObject != null)
-                dryItems.Add(dryDefs[i].boxObject.GetComponent<ItemHighlight>());
-        }
-        for (int i = 0; i < spiceDefs.Length; i++)
-        {
-            if (spiceDefs[i].groupIndex == spiceIndex && spiceDefs[i].jarObject != null)
-                spiceItems.Add(spiceDefs[i].jarObject.GetComponent<ItemHighlight>());
-        }
-
-        // Add 4 random fridge items
-        List<ItemHighlight> fridgeItems = AddRandomTaggedItems("fridge_item", 4);
-        // Add 4 random kitchen items
-        List<ItemHighlight> kitchenItems = AddRandomTaggedItems("kitchen_item", 4);
-
-        // Randomize the order of the three groups
-        List<List<ItemHighlight>> groupOrder = new List<List<ItemHighlight>> { canItems, dryItems, spiceItems, fridgeItems, kitchenItems };
-        ShuffleList(groupOrder);
-
-        // Find positions of each group after shuffling
-        int canPosition   = groupOrder.IndexOf(canItems);
-        int dryPosition   = groupOrder.IndexOf(dryItems);
-        int spicePosition = groupOrder.IndexOf(spiceItems);
-
-        // Add items in randomized group order
-        foreach (var group in groupOrder)
-            targets.AddRange(group);
-
-        _targetGroups = groupOrder
-            .Select(group => group.Select(item => item.gameObject.name).ToArray())
-            .ToList();
-
-        // Update TMP text — first 3 groups on page 1, last 2 on page 2
-        if (menuTextFirstPage != null)
-            menuTextFirstPage.text = FormatTargetList(_targetGroups.Take(3).ToList());
-        if (menuTextSecondPage != null)
-            menuTextSecondPage.text = FormatTargetList(_targetGroups.Skip(3).Take(2).ToList());
-
-        // ── Decide which TMP holds which group ──────────────────────────
-        Vector3 GetWorldPosForGroup(int groupIndex)
-        {
-            if (groupIndex < 3)
-                return GetGroupCenterFromTMP(menuTextFirstPage, groupIndex);
-            else
-                return GetGroupCenterFromTMP(menuTextSecondPage, groupIndex - 3);
-        }
-
-        Vector3 canPos   = GetWorldPosForGroup(canPosition);
-        Vector3 dryPos   = GetWorldPosForGroup(dryPosition);
-        Vector3 spicePos = GetWorldPosForGroup(spicePosition);
-
-        canManager.InstantiateBasicGroupGameObjects(canIndex, canPos);
-        dryGoodsManager.InstantiateBasicGroupGameObjects(dryIndex, dryPos);
-        spiceManager.InstantiateBasicGroupGameObjects(spiceIndex, spicePos);
-
-        // ── Spawn mini clones for fridge and kitchen items ───────────────
-        // Iterate every group; for fridge/kitchen groups find the correct TMP page
-        for (int groupIdx = 0; groupIdx < groupOrder.Count; groupIdx++)
-        {
-            List<ItemHighlight> group = groupOrder[groupIdx];
-
-            // Cans / dry goods / spices already have their own visual via InstantiateBasicGroupGameObjects
-            bool isFridgeGroup  = group == fridgeItems;
-            bool isKitchenGroup = group == kitchenItems;
-            if (!isFridgeGroup && !isKitchenGroup) continue;
-
-            // Determine which TMP page this group ended up on
-            TextMeshProUGUI targetTMP = groupIdx < 3 ? menuTextFirstPage : menuTextSecondPage;
-
-            //if (targetTMP != null)
-                //SpawnMiniClonesForGroup(group, targetTMP);
-        }
+        Debug.LogError("[Highlight] Could not find one or more item managers.");
+        return;
     }
+
+    SpiceDefinition[]    spiceDefs = spiceManager.spices;
+    CanDefinition[]      canDefs   = canManager.cans;
+    DryGoodsDefinition[] dryDefs   = dryGoodsManager.dryGoods;
+
+    string[] indices = trialPermutation.Split(',');
+    if (indices.Length != 3)
+    {
+        Debug.LogError($"[Highlight] Invalid permutation format: {trialPermutation}");
+        return;
+    }
+
+    int canIndex   = int.Parse(indices[0]);
+    int dryIndex   = int.Parse(indices[1]);
+    int spiceIndex = int.Parse(indices[2]);
+
+    targets = new List<ItemHighlight>();
+
+    List<ItemHighlight> canItems     = new List<ItemHighlight>();
+    List<ItemHighlight> dryItems     = new List<ItemHighlight>();
+    List<ItemHighlight> spiceItems   = new List<ItemHighlight>();
+
+    for (int i = 0; i < canDefs.Length; i++)
+        if (canDefs[i].groupIndex == canIndex && canDefs[i].canObject != null)
+            canItems.Add(canDefs[i].canObject.GetComponent<ItemHighlight>());
+
+    for (int i = 0; i < dryDefs.Length; i++)
+        if (dryDefs[i].groupIndex == dryIndex && dryDefs[i].boxObject != null)
+            dryItems.Add(dryDefs[i].boxObject.GetComponent<ItemHighlight>());
+
+    for (int i = 0; i < spiceDefs.Length; i++)
+        if (spiceDefs[i].groupIndex == spiceIndex && spiceDefs[i].jarObject != null)
+            spiceItems.Add(spiceDefs[i].jarObject.GetComponent<ItemHighlight>());
+
+    List<ItemHighlight> fridgeItems  = AddRandomTaggedItems("fridge_item", 4);
+    List<ItemHighlight> kitchenItems = AddRandomTaggedItems("kitchen_item", 4);
+
+    List<List<ItemHighlight>> groupOrder = new List<List<ItemHighlight>>
+        { canItems, dryItems, spiceItems, fridgeItems, kitchenItems };
+    ShuffleList(groupOrder);
+
+    foreach (var group in groupOrder)
+        targets.AddRange(group);
+
+    _targetGroups = groupOrder
+        .Select(group => group.Select(item => item.gameObject.name).ToArray())
+        .ToList();
+
+    // ── Clear both pages before rebuilding ──────────────────────────
+    _firstPageList.ClearList();
+    _secondPageList.ClearList();
+
+
+
+    var firstPageTargets  = groupOrder.Take(3).SelectMany(g => g).ToList();
+    var secondPageTargets = groupOrder.Skip(3).SelectMany(g => g).ToList();
+
+    StartCoroutine(_firstPageList.BuildList(firstPageTargets));
+    StartCoroutine(_secondPageList.BuildList(secondPageTargets));
+ 
+}
+
+/// <summary>
+/// Returns a human-readable group header label based on which group list this is.
+/// </summary>
+private string GetGroupLabel(
+    List<ItemHighlight> group,
+    int groupIdx,
+    List<ItemHighlight> canItems,
+    List<ItemHighlight> dryItems,
+    List<ItemHighlight> spiceItems,
+    List<ItemHighlight> fridgeItems,
+    List<ItemHighlight> kitchenItems)
+{
+    if (group == canItems)     return "Cans";
+    if (group == dryItems)     return "Dry Goods";
+    if (group == spiceItems)   return "Spices";
+    if (group == fridgeItems)  return "Fridge";
+    if (group == kitchenItems) return "Kitchen";
+    return $"Group {groupIdx + 1}";
+}
 
     // ─────────────────────────────────────────────────────────────────────
     // MINI CLONE HELPERS

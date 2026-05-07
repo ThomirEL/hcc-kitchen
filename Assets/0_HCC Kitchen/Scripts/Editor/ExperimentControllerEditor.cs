@@ -23,6 +23,7 @@ public class ExperimentControllerEditor : Editor
         EditorGUILayout.LabelField("References", EditorStyles.miniBoldLabel);
 
         SerializedProperty loggingEnabledProp = serializedObject.FindProperty("loggingEnabled");
+        SerializedProperty practiceRoundEnabledProp = serializedObject.FindProperty("practiceRoundEnabled");
         SerializedProperty participantIdProp = serializedObject.FindProperty("ParticipantID");
         SerializedProperty highlightManagerProp = serializedObject.FindProperty("highlightManager");
         SerializedProperty playerStartPosProp = serializedObject.FindProperty("playerStartPosition");
@@ -30,6 +31,7 @@ public class ExperimentControllerEditor : Editor
         SerializedProperty seedProp = serializedObject.FindProperty("randomSeed");
 
         if (loggingEnabledProp != null) EditorGUILayout.PropertyField(loggingEnabledProp);
+        if (practiceRoundEnabledProp != null) EditorGUILayout.PropertyField(practiceRoundEnabledProp);
         if (participantIdProp != null) EditorGUILayout.PropertyField(participantIdProp);
         if (highlightManagerProp != null) EditorGUILayout.PropertyField(highlightManagerProp);
         if (playerStartPosProp != null) EditorGUILayout.PropertyField(playerStartPosProp);

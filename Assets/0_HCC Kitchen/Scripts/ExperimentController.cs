@@ -59,6 +59,10 @@ public class ExperimentController : MonoBehaviour
     [SerializeField]
     private int randomSeed = 42;
 
+    public bool practiceRoundEnabled = true;
+
+    
+
 
 
     // ── Internal State ────────────────────────────────────────────────────
@@ -92,11 +96,7 @@ public class ExperimentController : MonoBehaviour
 
     private void Start()
     {
-        // Auto-generate trials if not already set up
-        if (trials.Count == 0)
-            GenerateTrials();
-        if (loggingEnabled)
-            Logging.Logger.ParticipantIDSet.AddListener(OnParticipantIDSet);
+       
     }
 
     private void OnParticipantIDSet()
@@ -196,11 +196,34 @@ public class ExperimentController : MonoBehaviour
         Debug.Log($"[Experiment] Generated {numTrials} trials.");
     }
 
+    public void PracticeRound()
+    {
+        if (!ValidateManager()) return;
+
+        Trial practiceTrial = new Trial
+        {
+            highlightType = KitchenHighlightManager.HighlightType.Circle,
+            targetingMode = KitchenHighlightManager.TargetingMode.All,
+            permutationIndex = 0 // Use first permutation for practice
+        };
+
+        trials.Clear();
+        trials.Add(practiceTrial);
+        StartNextTrial();
+    }
+
     /// <summary>
     /// Starts the entire experiment (all trials in sequence).
     /// </summary>
     public void StartExperiment()
     {
+        trials.Clear();
+         // Auto-generate trials if not already set up
+        if (trials.Count == 0)
+            GenerateTrials();
+        if (loggingEnabled)
+            Logging.Logger.ParticipantIDSet.AddListener(OnParticipantIDSet);
+
         if (!ValidateManager()) return;
 
         if (trials.Count == 0)

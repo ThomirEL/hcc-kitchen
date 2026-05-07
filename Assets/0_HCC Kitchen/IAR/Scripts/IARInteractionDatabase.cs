@@ -71,6 +71,8 @@ public class IARInteractionDatabase : MonoBehaviour
     // RegisterPart: append instead of overwrite
 public void RegisterPart(string itemName, IARPart part)
 {
+    if (part.log)
+        Debug.Log($"Registering part '{part.name}' for item '{itemName}'.");
     if (!_parts.TryGetValue(itemName, out var list))
     {
         list = new List<IARPart>();
@@ -93,46 +95,52 @@ public IARPart GetPart(string itemName)
 
     // Called by IARItem when its state changes
     public void OnStateChanged(string itemName, string state, bool active, GameObject itemObject = null)
-{
-    string key = TriggerKey(itemName, state);
-    if (!_lookup.TryGetValue(key, out var effects)) return;
-
-    itemObject.GetComponent<IARPart>().overrideDOI = active;
-    itemObject.GetComponent<IARPart>().RecalculateDOI();
-
-    // If held, clear contributions from all OTHER parts
-    if (state == "held" && active)
     {
-        List<IARPart> selfParts = GetParts(itemName);
-        foreach (var kvp in _parts)
+        IARPart selfPart = GetPart(itemName);
+        if (selfPart.log)
+            Debug.Log($"Trigger: {itemName} is now {state} (active={active}).");
+        selfPart.overrideDOI = active;
+        selfPart.RecalculateDOI();
+        string key = TriggerKey(itemName, state);
+        if (!_lookup.TryGetValue(key, out var effects)) return;
+
+        
+
+        
+
+        // If held, clear contributions from all OTHER parts
+        if (state == "held" && active)
         {
-            foreach (var part in kvp.Value)
+            List<IARPart> selfParts = GetParts(itemName);
+            foreach (var kvp in _parts)
             {
-                if (!selfParts.Contains(part))
-                    part.ClearAllContributions();
+                foreach (var part in kvp.Value)
+                {
+                    if (!selfParts.Contains(part))
+                        part.ClearAllContributions();
+                }
+            }
+        }
+
+        foreach (var effect in effects)
+        {
+            List<IARPart> targetParts = GetParts(effect.item); // All parts sharing this name
+
+            if (active)
+            {
+                foreach (var part in targetParts)
+                    part.SetContribution(effect.key, effect.value);
+            }
+            else
+            {
+                foreach (var part in targetParts)
+                {
+                    part.ClearContribution(effect.key);
+                    part.RecalculateDOI();
+                }
             }
         }
     }
-
-    foreach (var effect in effects)
-    {
-        List<IARPart> targetParts = GetParts(effect.item); // All parts sharing this name
-
-        if (active)
-        {
-            foreach (var part in targetParts)
-                part.SetContribution(effect.key, effect.value);
-        }
-        else
-        {
-            foreach (var part in targetParts)
-            {
-                part.ClearContribution(effect.key);
-                part.RecalculateDOI();
-            }
-        }
-    }
-}
 
 
 
