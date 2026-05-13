@@ -103,6 +103,10 @@ public class IARPart : MonoBehaviour
         }
     }
 
+    // Add these two fields near your other serialized fields
+[SerializeField] private float _doiLerpDuration = 5f;
+private Coroutine _lerpCoroutine;
+
     private float _dangerLevelToRise = 0f;
     private float _dangerLevelRiseDuration = 0f;
 
@@ -163,7 +167,7 @@ public class IARPart : MonoBehaviour
 
     void Start()
     {
-        this.gameObject.layer = LayerMask.NameToLayer("IARPart");
+        EnsureProximityCollider();
         // Calculate DOI after all Awake calls complete to ensure materials are properly initialized
         calculateThisDOI("Start");
     }
@@ -269,30 +273,54 @@ public class IARPart : MonoBehaviour
     /// <summary>
     /// Public method to recalculate DOI. Called by IARManager when settings change.
     /// </summary>
-    public void RecalculateDOI()
+    public void RecalculateDOI(string reason = "External recalculation")
     {
-        calculateThisDOI("External recalculation");
+        calculateThisDOI(reason);
     }
 
-    private IEnumerator LerpDOI(float targetDOI, float duration)
+    private void EnsureProximityCollider()
+{
+    // Check if one already exists (e.g. set up in Editor)
+    Transform existing = transform.Find("_ProximityTrigger");
+    if (existing != null) return;
+
+    GameObject trigger = new GameObject("_ProximityTrigger");
+    trigger.transform.SetParent(transform, worldPositionStays: false);
+    trigger.layer = LayerMask.NameToLayer("IARPart");
+
+    // Small sphere — just needs to be detectable by OverlapSphere.
+    // Actual distance filtering is done in CalculateProximity().
+    SphereCollider sc = trigger.AddComponent<SphereCollider>();
+    sc.isTrigger = true;
+    sc.radius = 0.1f;
+}
+
+    private IEnumerator LerpDOI(float targetDOI, float initialDOI, float duration, Renderer[] renderers)
+{
+    float time = 0f;
+
+    while (time < duration)
     {
-        float time = 0f;
-        float initialDOI = currentDoI;
+        float t = time / duration;
+        currentDoI = Mathf.Lerp(initialDOI, targetDOI, t);
+        if (log)
+            Debug.Log($"Lerping DOI for {name}: {currentDoI:F2} (target: {targetDOI:F2}, time: {time:F2}/{duration:F2})");
 
-        while (time < duration)
-        {
-            float t = time / duration;
-            currentDoI = Mathf.Lerp(initialDOI, targetDOI, t);
-            if (cachedRenderer != null && cachedRenderer.material != null)
-                cachedRenderer.material.SetFloat("_DOI", currentDoI);
-            time += Time.deltaTime;
-            yield return null;
-        }
+        foreach (Renderer r in renderers)
+            if (r != null && r.material != null)
+                r.material.SetFloat("_DOI", currentDoI);
 
-        currentDoI = targetDOI;
-        if (cachedRenderer != null && cachedRenderer.material != null)
-            cachedRenderer.material.SetFloat("_DOI", currentDoI);
+        time += Time.deltaTime;
+        yield return null;
     }
+
+    currentDoI = targetDOI;
+    foreach (Renderer r in renderers)
+        if (r != null && r.material != null)
+            r.material.SetFloat("_DOI", currentDoI);
+
+    _lerpCoroutine = null;
+}
 
  [HideInInspector] public bool IsInProximityRange = false;
 
@@ -300,58 +328,160 @@ void OnEnable()  { IARManager.Instance?.RegisterPart(this);   }
 void OnDisable() { IARManager.Instance?.UnregisterPart(this);  }
 
 // ─── MODIFY CalculateProximity() ──────────────────────────────────────────
-private float CalculateProximity()
-{
-    // Fast path: skip the sqrt entirely when out of range
-    if (!IsInProximityRange) return 0f;
+    private float CalculateProximity()
+    {
+        // Fast path: skip the sqrt entirely when out of range
+        if (!IsInProximityRange) return 0f;
 
-    if (manager.LeftController == null || manager.RightController == null)
-        return 0f;
+        if (manager.LeftController == null || manager.RightController == null)
+            return 0f;
 
-    float distToLeft  = Vector3.Distance(transform.position, manager.LeftController.position);
-    float distToRight = Vector3.Distance(transform.position, manager.RightController.position);
-    float closest     = Mathf.Min(distToLeft, distToRight);
+        float distToLeft  = Vector3.Distance(transform.position, manager.LeftController.position);
+        float distToRight = Vector3.Distance(transform.position, manager.RightController.position);
+        float closest     = Mathf.Min(distToLeft, distToRight);
 
-    float proximityDOI = Mathf.Clamp01(1f - (closest / manager.ProximityRadius));
+        float proximityDOI = Mathf.Clamp01(1f - (closest / manager.ProximityRadius));
 
-    if (log) Debug.Log($"{gameObject.name} proximity DOI: {proximityDOI:F2} (dist: {closest:F2}m)");
+        //if (log) Debug.Log($"{gameObject.name} proximity DOI: {proximityDOI:F2} (dist: {closest:F2}m)");
 
-    return manager.ProximityWeight * proximityDOI;
-}
+        return manager.ProximityWeight * proximityDOI;
+    }
     private void calculateThisDOI(string changedAspect = null)
     {
-        var prevDOI = currentDoI;
+        if (log)
+            Debug.Log($"[{name}] [DOI] === START calculateThisDOI === (reason: {changedAspect})");
+
+        float prevDOI = currentDoI;
+
+        if (log)
+            Debug.Log($"[{name}] [DOI] Previous DOI: {prevDOI:F4}");
 
         currentDoI = CalculateDOI();
-        if (log)
-        Debug.Log($" Calculating DOI for {name} (changed aspect: {changedAspect}), DOI was {prevDOI} -> new DOI {currentDoI}, /n  Commonality: {HowCommon}, Danger: {HowDangerous}, Intent: {GetCombinedIntentInterest()}, InCurrentStep: {IsInCurrentStep}, StepsInToFuture: {StepsInToFuture}");
 
-        if (cachedRenderer != null && cachedRenderer.material != null)
+        if (log)
+            Debug.Log($"[{name}] [DOI] New DOI after CalculateDOI(): {currentDoI:F4}");
+
+        if (log)
+            Debug.Log($"[{name}] [DOI] ΔDOI: {(currentDoI - prevDOI):F4}");
+
+        // 🔍 Proximity debug (important for your issue)
+        if (log)
         {
-            cachedRenderer.material.SetFloat("_DOI", currentDoI);
+            float proximity = CalculateProximity();
+            Debug.Log($"[{name}] [DOI] Proximity: {proximity:F4} | IsInProximityRange: {IsInProximityRange}");
+        }
+
+        // Collect all renderers to update — root first, then children as fallback
+        Renderer[] renderers = null;
+
+        if (cachedRenderer != null)
+        {
+            if (log)
+                Debug.Log($"[{name}] [DOI] Found cachedRenderer");
+
+            if (cachedRenderer.material != null)
+            {
+                if (log)
+                    Debug.Log($"[{name}] [DOI] cachedRenderer has valid material: {cachedRenderer.material.name}");
+
+                renderers = new Renderer[] { cachedRenderer };
+            }
+            else
+            {
+                if (log)
+                    Debug.LogWarning($"[{name}] [DOI] cachedRenderer exists but has NO material!");
+            }
         }
         else
         {
-            if (gameObject.name == "Chopping Knife")
+            if (log)
+                Debug.LogWarning($"[{name}] [DOI] No cachedRenderer found");
+        }
+
+        // Fallback to children
+        if (renderers == null)
+        {
+            if (log)
+                Debug.Log($"[{name}] [DOI] Falling back to GetComponentsInChildren<Renderer>()");
+
+            Renderer[] all = GetComponentsInChildren<Renderer>();
+
+            if (log)
+                Debug.Log($"[{name}] [DOI] Found {all.Length} total renderers in children");
+
+            var valid = new System.Collections.Generic.List<Renderer>();
+
+            foreach (Renderer r in all)
             {
-                Debug.LogWarning($"IARPart '{name}' cannot update material - Renderer or material not found on object! Attempting to update children renderers as fallback.");
-            }
-            Renderer[] childRenderers = GetComponentsInChildren<Renderer>();
-            if (gameObject.name == "Chopping Knife")
-            {
-                Debug.Log($"Found {childRenderers.Length} child renderers for '{name}'.");
-            }
-            if (childRenderers.Length > 0)
-            {
-                foreach (Renderer childRenderer in childRenderers)
+                if (r == null)
                 {
-                    if (childRenderer != null && childRenderer.sharedMaterial != null)
-                        childRenderer.sharedMaterial.SetFloat("_DOI", currentDoI);
+                    if (log)
+                        Debug.LogWarning($"[{name}] [DOI] Found NULL renderer in children!");
+                    continue;
                 }
+
+                if (r.sharedMaterial == null)
+                {
+                    if (log)
+                        Debug.LogWarning($"[{name}] [DOI] Renderer '{r.name}' has NO sharedMaterial");
+                    continue;
+                }
+
+                if (log)
+                    Debug.Log($"[{name}] [DOI] Valid renderer: '{r.name}' (material: {r.sharedMaterial.name})");
+
+                valid.Add(r);
+            }
+
+            if (valid.Count > 0)
+            {
+                renderers = valid.ToArray();
+
+                if (log)
+                    Debug.Log($"[{name}] [DOI] Using {renderers.Length} valid child renderers");
             }
             else
-                Debug.LogWarning($"IARPart '{name}' cannot update material - Renderer or material not found on object or children!");
+            {
+                if (log)
+                    Debug.LogWarning($"[{name}] [DOI] No valid child renderers found!");
+            }
         }
+
+        // Final safety check
+        if (renderers == null || renderers.Length == 0)
+        {
+            Debug.LogWarning($"[{name}] [DOI] NO VALID RENDERERS → aborting DOI update.");
+            return;
+        }
+
+        // Coroutine handling
+        if (_lerpCoroutine != null)
+        {
+            if (log)
+                Debug.Log($"[{name}] [DOI] Stopping existing lerp coroutine");
+            return;
+
+            //StopCoroutine(_lerpCoroutine);
+        }
+        else
+        {
+            if (log)
+                Debug.Log($"[{name}] [DOI] No existing lerp coroutine running");
+        }
+
+        if (log)
+        {
+            Debug.Log($"[{name}] [DOI] Starting LerpDOI coroutine:");
+            Debug.Log($"[{name}] [DOI]    From: {prevDOI:F4}");
+            Debug.Log($"[{name}] [DOI]    To:   {currentDoI:F4}");
+            Debug.Log($"[{name}] [DOI]    Duration: {_doiLerpDuration:F2}s");
+            Debug.Log($"[{name}] [DOI]    Renderer count: {renderers.Length}");
+        }
+
+        _lerpCoroutine = StartCoroutine(LerpDOI(currentDoI, prevDOI, _doiLerpDuration, renderers));
+
+        if (log)
+            Debug.Log($"[{name}] [DOI] === END calculateThisDOI ===");
     }
 
     public float CalculateDOI()

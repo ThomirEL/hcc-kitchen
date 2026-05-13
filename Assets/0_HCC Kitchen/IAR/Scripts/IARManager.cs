@@ -197,7 +197,7 @@ public class IARManager : MonoBehaviour
             if (!_frameNearby.Contains(part))
             {
                 part.IsInProximityRange = false;
-                part.RecalculateDOI();
+                part.RecalculateDOI("Left proximity range");
             }
         }
 
@@ -205,7 +205,7 @@ public class IARManager : MonoBehaviour
         foreach (IARPart part in _frameNearby)
         {
             part.IsInProximityRange = true;
-            part.RecalculateDOI();
+            part.RecalculateDOI("Entered proximity range");
         }
 
         // Swap — reuse both sets next frame, no heap allocation.
@@ -239,9 +239,11 @@ public class IARManager : MonoBehaviour
 
         for (int i = 0; i < hitCount; i++)
         {
-            IARPart part = _overlapBuffer[i].GetComponent<IARPart>();
-            if (part != null)
+            IARPart part = _overlapBuffer[i].GetComponentInParent<IARPart>();
+            if (part != null) {
                 result.Add(part);
+                //Debug.Log($"Proximity hit: {part.name} at distance {Vector3.Distance(center, part.transform.position):F2}m");
+                }
         }
     }
 
