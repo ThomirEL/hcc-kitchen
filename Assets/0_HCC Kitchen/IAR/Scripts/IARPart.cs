@@ -76,45 +76,45 @@ public static class ItemPropertiesLoader
 
 public class IARPart : MonoBehaviour
 {
-    [SerializeField]
+    // ─── Serialized fields ────────────────────────────────────────────────────
+
     [Header("How common is this item. More common = more interest. Most common is 5, least common is 1")]
-    [Range(0f,1f)] private float _howCommon = 0.5f;
+    [SerializeField] [Range(0f, 1f)] private float _howCommon = 0.5f;
+
+    [SerializeField] [Range(0f, 1f)] private float _howDangerous = 0.0f;
+
+    [SerializeField] private float _doiLerpDuration = 5f;
+
+    [SerializeField] private string selfContributionKey;
+    [SerializeField] private float  selfContrubutionDuration;
+
+    // ─── Public properties ────────────────────────────────────────────────────
 
     public float HowCommon
     {
-        get {return _howCommon;}
-        set {
+        get => _howCommon;
+        set
+        {
             if (_howCommon == value) return;
             _howCommon = value;
             calculateThisDOI("HowCommon");
         }
     }
 
-    [SerializeField]
-    [Range(0f,1f)] private float _howDangerous = 0.0f;
-
     public float HowDangerous
     {
-        get {return _howDangerous;}
-        set {
+        get => _howDangerous;
+        set
+        {
             if (_howDangerous == value) return;
             _howDangerous = value;
             calculateThisDOI("HowDangerous");
         }
     }
 
-    // Add these two fields near your other serialized fields
-[SerializeField] private float _doiLerpDuration = 5f;
-private Coroutine _lerpCoroutine;
-
-    private float _dangerLevelToRise = 0f;
-    private float _dangerLevelRiseDuration = 0f;
-
-    private bool _isInCurrentStep;
-
     public bool IsInCurrentStep
     {
-        get {return _isInCurrentStep;}
+        get => _isInCurrentStep;
         set
         {
             if (_isInCurrentStep == value) return;
@@ -123,11 +123,9 @@ private Coroutine _lerpCoroutine;
         }
     }
 
-    private int? _stepsInToFuture;
-
     public int? StepsInToFuture
     {
-        get {return _stepsInToFuture;}
+        get => _stepsInToFuture;
         set
         {
             if (_stepsInToFuture == value) return;
@@ -136,21 +134,49 @@ private Coroutine _lerpCoroutine;
         }
     }
 
-    public bool log = false;
+    // ─── Public state ─────────────────────────────────────────────────────────
 
+    public bool log         = false;
     public bool overrideDOI = false;
+
+    [HideInInspector] public float    currentDoI = 0.5f;
+    [HideInInspector] public Renderer cachedRenderer;
+    [HideInInspector] public Collider cachedCollider;
+    [HideInInspector] public bool     IsInProximityRange = false;
+
+    // ─── Private state ────────────────────────────────────────────────────────
+
+    private bool  _isInCurrentStep;
+    private int?  _stepsInToFuture;
+
+    private float _targetDoI;                    // lerp chases this every Update
+    private Renderer[] _cachedRenderers;         // collected once in Start, reused every frame
+
+    private float _dangerLevelToRise      = 0f;
+    private float _dangerLevelRiseDuration = 0f;
 
     private Dictionary<string, float> _contributions = new();
 
-    [HideInInspector] public float currentDoI = 0.5f;
-    [HideInInspector] public Renderer   cachedRenderer;
-    [HideInInspector] public Collider   cachedCollider;
+    private IARManager  manager;
+    private TaskManager taskManager;
+    [Header("Velocity influence on proximity")]
+[SerializeField] private float _velocityMax = 2.0f;        // speed at which boost caps
+[SerializeField] private float _velocityInfluence = 1.0f;  // how much velocity affects DOI
 
-    [SerializeField] private string selfContributionKey;
-    [SerializeField] private float  selfContrubutionDuration;
+[Header("DEBUG DOI Breakdown")]
+[SerializeField] private bool debugDOI = true;
 
-    IARManager   manager;
-    TaskManager  taskManager;
+[ReadOnly] public float dbg_commonality;
+[ReadOnly] public float dbg_danger;
+[ReadOnly] public float dbg_intent;
+[ReadOnly] public float dbg_proximity;
+[ReadOnly] public float dbg_currentStep;
+[ReadOnly] public float dbg_futureSteps;
+[ReadOnly] public float dbg_total;
+
+    // ─── Lifecycle ────────────────────────────────────────────────────────────
+
+    
 
     void Awake()
     {
@@ -158,372 +184,231 @@ private Coroutine _lerpCoroutine;
         cachedCollider = GetComponent<Collider>();
         GetManager();
         GetTaskManager();
-
-        // ── Load commonality & danger from JSON ──────────────────────────────
-        // The lookup uses the GameObject name. If your GameObject names differ
-        // from the JSON "name" field, adjust the string passed here.
         LoadPropertiesFromJson(gameObject.name);
     }
 
     void Start()
     {
         EnsureProximityCollider();
-        // Calculate DOI after all Awake calls complete to ensure materials are properly initialized
+        CacheRenderers();
         calculateThisDOI("Start");
+        // Snap DOI immediately on start — no lerp from 0
+        currentDoI = _targetDoI;
     }
 
+    void Update()
+    {
+        // ── DOI lerp ──────────────────────────────────────────────────────────
+        // Runs every frame. Cost: one float compare, one Lerp, foreach over
+        // 1–3 renderers. Equivalent to the old per-frame coroutine while-loop,
+        // but without any coroutine start/stop overhead or race conditions.
+        var currentShaderDoi = _cachedRenderers != null && _cachedRenderers.Length > 0 && _cachedRenderers[0].material != null
+            ? _cachedRenderers[0].material.GetFloat("_DOI")
+            : -1f;
+        if (_cachedRenderers != null && Mathf.Abs(currentShaderDoi - _targetDoI) > 0.0001f)
+        {
+            if (log)
+                Debug.Log($"[{name}] Lerp DOI: {currentDoI:F4} → {_targetDoI:F4} (delta: {Mathf.Abs(currentDoI - _targetDoI):F6})");
+            currentDoI = Mathf.Lerp(currentDoI, _targetDoI, Time.deltaTime / _doiLerpDuration);
+
+            // Snap when close enough to avoid infinite asymptotic crawl
+            if (Mathf.Abs(currentDoI - _targetDoI) < 0.001f)
+                currentDoI = _targetDoI;
+
+            foreach (Renderer r in _cachedRenderers)
+                if (r != null && r.material != null)
+                    r.material.SetFloat("_DOI", currentDoI);
+        }
+    }
+
+    void OnEnable()  { IARManager.Instance?.RegisterPart(this);  }
+    void OnDisable() { IARManager.Instance?.UnregisterPart(this); }
+
+    // ─── Renderer caching ─────────────────────────────────────────────────────
 
     /// <summary>
-    /// Looks up this GameObject's name in item_properties.json and applies
-    /// commonality and howDangerous if a match is found. Always uses the base name (first word)
-    /// so that variants like "Tomato" and "Tomato Chunk" load the same properties.
-    /// The values are written directly to the backing fields to avoid triggering DOI recalculation.
-    /// Awake will call calculateThisDOI() once after this method completes.
+    /// Collects all valid renderers once at Start so Update never calls
+    /// GetComponentsInChildren (which is expensive per-frame).
+    /// Root renderer takes priority; falls back to children if root has none.
     /// </summary>
-    private void LoadPropertiesFromJson(string itemName)
+    private void CacheRenderers()
     {
-        // Always use base name (first word) for variants like "Tomato" and "Tomato Chunk"
-        string baseName = itemName;
-        
-        if (ItemPropertiesLoader.TryGetProperties(baseName, out float commonality, out float howDangerous))
+        if (cachedRenderer != null && cachedRenderer.material != null)
         {
-            // Write directly to backing fields — don't use properties to avoid triggering calculateThisDOI.
-            // Awake() will call calculateThisDOI() once after all properties are loaded.
-            _howCommon = commonality;
-            _howDangerous = howDangerous;
+            _cachedRenderers = new Renderer[] { cachedRenderer };
+            return;
+        }
 
+        Renderer[] all   = GetComponentsInChildren<Renderer>();
+        var        valid = new List<Renderer>();
+
+        foreach (Renderer r in all)
+            if (r != null && r.sharedMaterial != null)
+                valid.Add(r);
+
+        if (valid.Count > 0)
+        {
+            _cachedRenderers = valid.ToArray();
             if (log)
-                Debug.Log($"IARPart '{name}': loaded from JSON (base name '{baseName}') → commonality={commonality}, howDangerous={howDangerous}");
+                Debug.Log($"[{name}] CacheRenderers: using {_cachedRenderers.Length} child renderer(s).");
         }
         else
         {
-            Debug.LogWarning($"IARPart '{name}': no JSON entry found for '{baseName}', using Inspector values.");
+            _cachedRenderers = null;
+            Debug.LogWarning($"[{name}] CacheRenderers: no valid renderers found.");
         }
     }
 
-    private string GetBaseItemName(string itemName)
+    // ─── Proximity collider ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// Adds a small trigger child on the IARPart layer for proximity overlap
+    /// detection. Kept separate from the root so the root's physics layer
+    /// (and therefore XRI grab detection) is untouched.
+    /// </summary>
+    private void EnsureProximityCollider()
     {
-        if (string.IsNullOrEmpty(itemName)) return itemName;
-        return itemName.Split(' ')[0];
+        if (transform.Find("_ProximityTrigger") != null) return;
+
+        GameObject trigger = new GameObject("_ProximityTrigger");
+        trigger.transform.SetParent(transform, worldPositionStays: false);
+        trigger.layer = LayerMask.NameToLayer("IARPart");
+
+        SphereCollider sc = trigger.AddComponent<SphereCollider>();
+        sc.isTrigger = true;
+        sc.radius    = 0.1f;
+    }
+
+    // ─── JSON loading ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Looks up this item in kitchen_parts.json. Writes directly to backing
+    /// fields to avoid triggering calculateThisDOI before Start is ready.
+    /// </summary>
+    private void LoadPropertiesFromJson(string itemName)
+    {
+        if (ItemPropertiesLoader.TryGetProperties(itemName, out float commonality, out float howDangerous))
+        {
+            _howCommon    = commonality;
+            _howDangerous = howDangerous;
+
+            if (log)
+                Debug.Log($"[{name}] Loaded from JSON → commonality={commonality}, howDangerous={howDangerous}");
+        }
+        else
+        {
+            Debug.LogWarning($"[{name}] No JSON entry found for '{itemName}', using Inspector values.");
+        }
+    }
+
+    // ─── Manager accessors ────────────────────────────────────────────────────
+
+    private void GetManager()
+    {
+        if (manager != null) return;
+        manager = IARManager.Instance ?? FindObjectOfType<IARManager>();
+        if (manager == null)
+            Debug.LogError($"[{name}] Cannot find IARManager in scene!");
     }
 
     private void GetTaskManager()
     {
         if (taskManager != null) return;
-
-        taskManager = TaskManager.Instance;
+        taskManager = TaskManager.Instance ?? FindObjectOfType<TaskManager>();
         if (taskManager == null)
-        {
-            taskManager = FindObjectOfType<TaskManager>();
-            if (taskManager == null)
-                Debug.LogError($"IARPart '{name}' cannot find TaskManager in scene!");
-        }
+            Debug.LogError($"[{name}] Cannot find TaskManager in scene!");
     }
 
-    private void GetManager()
-    {
-        if (manager != null) return;
-
-        manager = IARManager.Instance;
-        if (manager == null)
-        {
-            manager = FindObjectOfType<IARManager>();
-            if (manager == null)
-                Debug.LogError($"IARPart '{name}' cannot find IARManager in scene!");
-        }
-    }
-
-    public void SetContribution(string key, float value)
-    {
-        _contributions[key] = value;
-        calculateThisDOI($"Contribution:{key}");
-    }
-
-    public void SetDangerLevel(float dangerLevel)
-    {
-        _dangerLevelToRise = dangerLevel;
-    }
-
-    public void SetDangerDuration(float duration)
-    {
-        _dangerLevelRiseDuration = duration;
-    }
-
-    public void StartDangerRise()
-    {
-        StartCoroutine(LerpDangerLevel());
-    }
-
-    private IEnumerator LerpDangerLevel()
-    {
-        float time = 0f;
-        float initialDanger = HowDangerous;
-
-        while (time < _dangerLevelRiseDuration)
-        {
-            float t = time / _dangerLevelRiseDuration;
-            HowDangerous = Mathf.Lerp(initialDanger, _dangerLevelToRise, t);
-            time += Time.deltaTime;
-            yield return null;
-        }
-
-        HowDangerous = _dangerLevelToRise;
-    }
+    // ─── DOI calculation ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// Public method to recalculate DOI. Called by IARManager when settings change.
+    /// Sets _targetDoI to the newly calculated value. Update() lerps
+    /// currentDoI toward it every frame — no coroutines needed.
     /// </summary>
+    private void calculateThisDOI(string changedAspect = null)
+    {
+        _targetDoI = CalculateDOI();
+
+        if (log)
+            Debug.Log($"[{name}] DOI target → {_targetDoI:F4} (reason: {changedAspect})");
+    }
+
     public void RecalculateDOI(string reason = "External recalculation")
     {
         calculateThisDOI(reason);
     }
 
-    private void EnsureProximityCollider()
-{
-    // Check if one already exists (e.g. set up in Editor)
-    Transform existing = transform.Find("_ProximityTrigger");
-    if (existing != null) return;
-
-    GameObject trigger = new GameObject("_ProximityTrigger");
-    trigger.transform.SetParent(transform, worldPositionStays: false);
-    trigger.layer = LayerMask.NameToLayer("IARPart");
-
-    // Small sphere — just needs to be detectable by OverlapSphere.
-    // Actual distance filtering is done in CalculateProximity().
-    SphereCollider sc = trigger.AddComponent<SphereCollider>();
-    sc.isTrigger = true;
-    sc.radius = 0.1f;
-}
-
-    private IEnumerator LerpDOI(float targetDOI, float initialDOI, float duration, Renderer[] renderers)
-{
-    float time = 0f;
-
-    while (time < duration)
-    {
-        float t = time / duration;
-        currentDoI = Mathf.Lerp(initialDOI, targetDOI, t);
-        if (log)
-            Debug.Log($"Lerping DOI for {name}: {currentDoI:F2} (target: {targetDOI:F2}, time: {time:F2}/{duration:F2})");
-
-        foreach (Renderer r in renderers)
-            if (r != null && r.material != null)
-                r.material.SetFloat("_DOI", currentDoI);
-
-        time += Time.deltaTime;
-        yield return null;
-    }
-
-    currentDoI = targetDOI;
-    foreach (Renderer r in renderers)
-        if (r != null && r.material != null)
-            r.material.SetFloat("_DOI", currentDoI);
-
-    _lerpCoroutine = null;
-}
-
- [HideInInspector] public bool IsInProximityRange = false;
-
-void OnEnable()  { IARManager.Instance?.RegisterPart(this);   }
-void OnDisable() { IARManager.Instance?.UnregisterPart(this);  }
-
-// ─── MODIFY CalculateProximity() ──────────────────────────────────────────
-    private float CalculateProximity()
-    {
-        // Fast path: skip the sqrt entirely when out of range
-        if (!IsInProximityRange) return 0f;
-
-        if (manager.LeftController == null || manager.RightController == null)
-            return 0f;
-
-        float distToLeft  = Vector3.Distance(transform.position, manager.LeftController.position);
-        float distToRight = Vector3.Distance(transform.position, manager.RightController.position);
-        float closest     = Mathf.Min(distToLeft, distToRight);
-
-        float proximityDOI = Mathf.Clamp01(1f - (closest / manager.ProximityRadius));
-
-        //if (log) Debug.Log($"{gameObject.name} proximity DOI: {proximityDOI:F2} (dist: {closest:F2}m)");
-
-        return manager.ProximityWeight * proximityDOI;
-    }
-    private void calculateThisDOI(string changedAspect = null)
-    {
-        if (log)
-            Debug.Log($"[{name}] [DOI] === START calculateThisDOI === (reason: {changedAspect})");
-
-        float prevDOI = currentDoI;
-
-        if (log)
-            Debug.Log($"[{name}] [DOI] Previous DOI: {prevDOI:F4}");
-
-        currentDoI = CalculateDOI();
-
-        if (log)
-            Debug.Log($"[{name}] [DOI] New DOI after CalculateDOI(): {currentDoI:F4}");
-
-        if (log)
-            Debug.Log($"[{name}] [DOI] ΔDOI: {(currentDoI - prevDOI):F4}");
-
-        // 🔍 Proximity debug (important for your issue)
-        if (log)
-        {
-            float proximity = CalculateProximity();
-            Debug.Log($"[{name}] [DOI] Proximity: {proximity:F4} | IsInProximityRange: {IsInProximityRange}");
-        }
-
-        // Collect all renderers to update — root first, then children as fallback
-        Renderer[] renderers = null;
-
-        if (cachedRenderer != null)
-        {
-            if (log)
-                Debug.Log($"[{name}] [DOI] Found cachedRenderer");
-
-            if (cachedRenderer.material != null)
-            {
-                if (log)
-                    Debug.Log($"[{name}] [DOI] cachedRenderer has valid material: {cachedRenderer.material.name}");
-
-                renderers = new Renderer[] { cachedRenderer };
-            }
-            else
-            {
-                if (log)
-                    Debug.LogWarning($"[{name}] [DOI] cachedRenderer exists but has NO material!");
-            }
-        }
-        else
-        {
-            if (log)
-                Debug.LogWarning($"[{name}] [DOI] No cachedRenderer found");
-        }
-
-        // Fallback to children
-        if (renderers == null)
-        {
-            if (log)
-                Debug.Log($"[{name}] [DOI] Falling back to GetComponentsInChildren<Renderer>()");
-
-            Renderer[] all = GetComponentsInChildren<Renderer>();
-
-            if (log)
-                Debug.Log($"[{name}] [DOI] Found {all.Length} total renderers in children");
-
-            var valid = new System.Collections.Generic.List<Renderer>();
-
-            foreach (Renderer r in all)
-            {
-                if (r == null)
-                {
-                    if (log)
-                        Debug.LogWarning($"[{name}] [DOI] Found NULL renderer in children!");
-                    continue;
-                }
-
-                if (r.sharedMaterial == null)
-                {
-                    if (log)
-                        Debug.LogWarning($"[{name}] [DOI] Renderer '{r.name}' has NO sharedMaterial");
-                    continue;
-                }
-
-                if (log)
-                    Debug.Log($"[{name}] [DOI] Valid renderer: '{r.name}' (material: {r.sharedMaterial.name})");
-
-                valid.Add(r);
-            }
-
-            if (valid.Count > 0)
-            {
-                renderers = valid.ToArray();
-
-                if (log)
-                    Debug.Log($"[{name}] [DOI] Using {renderers.Length} valid child renderers");
-            }
-            else
-            {
-                if (log)
-                    Debug.LogWarning($"[{name}] [DOI] No valid child renderers found!");
-            }
-        }
-
-        // Final safety check
-        if (renderers == null || renderers.Length == 0)
-        {
-            Debug.LogWarning($"[{name}] [DOI] NO VALID RENDERERS → aborting DOI update.");
-            return;
-        }
-
-        // Coroutine handling
-        if (_lerpCoroutine != null)
-        {
-            if (log)
-                Debug.Log($"[{name}] [DOI] Stopping existing lerp coroutine");
-            return;
-
-            //StopCoroutine(_lerpCoroutine);
-        }
-        else
-        {
-            if (log)
-                Debug.Log($"[{name}] [DOI] No existing lerp coroutine running");
-        }
-
-        if (log)
-        {
-            Debug.Log($"[{name}] [DOI] Starting LerpDOI coroutine:");
-            Debug.Log($"[{name}] [DOI]    From: {prevDOI:F4}");
-            Debug.Log($"[{name}] [DOI]    To:   {currentDoI:F4}");
-            Debug.Log($"[{name}] [DOI]    Duration: {_doiLerpDuration:F2}s");
-            Debug.Log($"[{name}] [DOI]    Renderer count: {renderers.Length}");
-        }
-
-        _lerpCoroutine = StartCoroutine(LerpDOI(currentDoI, prevDOI, _doiLerpDuration, renderers));
-
-        if (log)
-            Debug.Log($"[{name}] [DOI] === END calculateThisDOI ===");
-    }
+    
 
     public float CalculateDOI()
+{
+    if (overrideDOI) return 1f;
+
+    GetManager();
+    if (manager == null)
     {
-
-        if (overrideDOI) return 1f; // If override is enabled, skip calculation and return current DOI
-
-        GetManager();
-
-        if (manager == null)
-        {
-            Debug.LogError($"IARPart '{name}' cannot calculate DOI - IARManager not found!");
-            return 0f;
-        }
-
-        float DOI = 0f;
-
-        if (manager.Commonality)            DOI += CalculateCommonality();
-        if (manager.Danger)                 DOI += CalculateDanger();
-        if (manager.Intent)                 DOI += CalculateIntent();
-        if (manager.Proximity)              DOI += CalculateProximity();
-        
-        // Only calculate task relevance if this item is in the current recipe
-        GetTaskManager();
-        if (taskManager != null && taskManager.IsItemInCurrentRecipe(gameObject.name))
-        {
-            if (manager.CurrentTaskRelevance)   DOI += AddDOIForCurrentStep();
-            if (manager.FutureTaskRelevance)    DOI += AddDOIForFutureSteps(_stepsInToFuture ?? 0);
-        }
-
-        return Mathf.Clamp01(DOI);
+        Debug.LogError($"[{name}] Cannot calculate DOI — IARManager not found!");
+        return 0f;
     }
 
+    float DOI = 0f;
 
-    private float CalculateDanger()
+    // ── Individual contributions ─────────────────────
+    dbg_commonality = manager.Commonality ? CalculateCommonality() : 0f;
+    dbg_danger      = manager.Danger      ? CalculateDanger()      : 0f;
+    dbg_intent      = manager.Intent      ? CalculateIntent()      : 0f;
+    dbg_proximity   = manager.Proximity   ? CalculateProximity()   : 0f;
+
+    dbg_currentStep = 0f;
+    dbg_futureSteps = 0f;
+
+    GetTaskManager();
+    if (taskManager != null && taskManager.IsItemInCurrentRecipe(gameObject.name))
     {
-        return manager.DangerWeight * Mathf.Lerp(manager.DANGER_MIN, manager.DANGER_MAX, HowDangerous);
+        if (manager.CurrentTaskRelevance)
+            dbg_currentStep = AddDOIForCurrentStep();
+
+        if (manager.FutureTaskRelevance)
+            dbg_futureSteps = AddDOIForFutureSteps(_stepsInToFuture ?? 0);
     }
+
+    DOI = dbg_commonality
+        + dbg_danger
+        + dbg_intent
+        + dbg_proximity
+        + dbg_currentStep
+        + dbg_futureSteps;
+
+    dbg_total = Mathf.Clamp01(DOI);
+
+    // ── Optional logging ─────────────────────────────
+    if (debugDOI && log)
+    {
+        Debug.Log(
+            $"[{name}] DOI Breakdown:\n" +
+            $"  Commonality : {dbg_commonality:F3}\n" +
+            $"  Danger      : {dbg_danger:F3}\n" +
+            $"  Intent      : {dbg_intent:F3}\n" +
+            $"  Proximity   : {dbg_proximity:F3}\n" +
+            $"  CurrentStep : {dbg_currentStep:F3}\n" +
+            $"  FutureSteps : {dbg_futureSteps:F3}\n" +
+            $"  TOTAL       : {dbg_total:F3}"
+        );
+    }
+
+    return dbg_total;
+}
+
+    // ─── DOI components ───────────────────────────────────────────────────────
 
     private float CalculateCommonality()
     {
         return manager.CommonalityWeight * Mathf.Lerp(manager.COMMON_MIN, manager.COMMON_MAX, HowCommon);
+    }
+
+    private float CalculateDanger()
+    {
+        return manager.DangerWeight * Mathf.Lerp(manager.DANGER_MIN, manager.DANGER_MAX, HowDangerous);
     }
 
     private float CalculateIntent()
@@ -531,9 +416,114 @@ void OnDisable() { IARManager.Instance?.UnregisterPart(this);  }
         return manager.PairingWeight * GetCombinedIntentInterest();
     }
 
+    private float CalculateProximity()
+{
+    if (!IsInProximityRange) return 0f;
+    if (manager.LeftController == null || manager.RightController == null) return 0f;
+
+    // ── Distance ─────────────────────────────────────
+    float distToLeft  = Vector3.Distance(transform.position, manager.LeftController.position);
+    float distToRight = Vector3.Distance(transform.position, manager.RightController.position);
+    float closest     = Mathf.Min(distToLeft, distToRight);
+
+    float proximityDOI = Mathf.Clamp01(1f - (closest / manager.ProximityRadius));
+
+    // ── Velocity (NEW) ───────────────────────────────
+    float leftVelocity  = GetVelocity(manager.LeftController);
+    float rightVelocity = GetVelocity(manager.RightController);
+
+    float maxVelocity = Mathf.Max(leftVelocity, rightVelocity);
+
+    // Normalize velocity (0 → 1)
+    float velocityFactor = Mathf.Clamp01(maxVelocity / _velocityMax);
+    velocityFactor = Mathf.SmoothStep(0f, 1f, velocityFactor);
+
+    // Apply influence (can exceed 1 before clamp later)
+    float velocityBoost = 1f + (velocityFactor * _velocityInfluence);
+
+    if (log)
+        Debug.Log($"[{name}] Proximity: {proximityDOI:F2}, Velocity: {maxVelocity:F2}, Boost: {velocityBoost:F2}");
+
+    return manager.ProximityWeight * proximityDOI * velocityBoost;
+}
+
+    private float CalculateStepDistanceFalloff(int stepDistance)
+    {
+        if (stepDistance == 0) return 1f;
+        return Mathf.Exp(-stepDistance * stepDistance / (2f * manager.gaussianSigma * manager.gaussianSigma));
+    }
+
+    private Vector3 _prevLeftPos;
+private Vector3 _prevRightPos;
+private bool _hasPrev = false;
+
+private float GetVelocity(Transform controller)
+{
+    if (!_hasPrev)
+    {
+        _prevLeftPos = manager.LeftController.position;
+        _prevRightPos = manager.RightController.position;
+        _hasPrev = true;
+        return 0f;
+    }
+
+    float velocity;
+
+    if (controller == manager.LeftController)
+    {
+        velocity = (_prevLeftPos - controller.position).magnitude / Time.deltaTime;
+        _prevLeftPos = controller.position;
+    }
+    else
+    {
+        velocity = (_prevRightPos - controller.position).magnitude / Time.deltaTime;
+        _prevRightPos = controller.position;
+    }
+
+    return velocity;
+}
+
+    // ─── Task relevance ───────────────────────────────────────────────────────
+
+    public float AddDOIForCurrentStep()
+    {
+        GetTaskManager();
+        if (taskManager == null) return 0f;
+
+        List<string> currentStepObjects = taskManager.GetCurrentStepObjects();
+        string basePartName = GetBaseItemName(gameObject.name);
+
+        foreach (string objectName in currentStepObjects)
+        {
+            if (basePartName == GetBaseItemName(objectName))
+            {
+                if (log) Debug.Log($"[{name}] In current step: {taskManager.CurrentStep.description}");
+                return manager.CurrentTaskRelevanceWeight * 0.5f;
+            }
+        }
+        return 0f;
+    }
+
+    public float AddDOIForFutureSteps(int howManyStepsAhead)
+    {
+        if (howManyStepsAhead <= 0) return 0f;
+        float distanceFactor = Mathf.Exp(-howManyStepsAhead * 0.35f);
+        if (log) Debug.Log($"[{name}] {howManyStepsAhead} step(s) ahead (bonus: {distanceFactor:F3})");
+        return manager.FutureTaskRelevanceWeight * distanceFactor;
+    }
+
+    // ─── Contributions ────────────────────────────────────────────────────────
+
+    public void SetContribution(string key, float value)
+    {
+        _contributions[key] = value;
+        calculateThisDOI($"Contribution:{key}");
+    }
+
     public void ClearContribution(string key)
     {
         _contributions.Remove(key);
+        calculateThisDOI($"ClearedContribution:{key}");
     }
 
     public void ClearAllContributions()
@@ -555,48 +545,35 @@ void OnDisable() { IARManager.Instance?.UnregisterPart(this);  }
         return _contributions.TryGetValue(key, out float v) ? v : 0f;
     }
 
-    public float AddDOIForCurrentStep()
+    // ─── Danger rise ──────────────────────────────────────────────────────────
+
+    public void SetDangerLevel(float dangerLevel)       { _dangerLevelToRise       = dangerLevel; }
+    public void SetDangerDuration(float duration)       { _dangerLevelRiseDuration = duration;    }
+    public void StartDangerRise()                       { StartCoroutine(LerpDangerLevel());       }
+
+    private IEnumerator LerpDangerLevel()
     {
-        GetTaskManager();
-        if (taskManager == null)
+        float time          = 0f;
+        float initialDanger = HowDangerous;
+
+        while (time < _dangerLevelRiseDuration)
         {
-            Debug.LogWarning($"IARPart '{name}' cannot find TaskManager!");
-            return 0f;
+            HowDangerous = Mathf.Lerp(initialDanger, _dangerLevelToRise, time / _dangerLevelRiseDuration);
+            time        += Time.deltaTime;
+            yield return null;
         }
 
-        List<string> currentStepObjects = taskManager.GetCurrentStepObjects();
-        string basePartName = GetBaseItemName(gameObject.name);
-        
-        if (gameObject.name == "Chopping Knife")
-        {
-            Debug.Log($"IARPart '{name}' checking current step relevance. Current step objects: {string.Join(", ", currentStepObjects)}");
-        }
-        
-        foreach (string objectName in currentStepObjects)
-        {
-            string baseObjectName = GetBaseItemName(objectName);
-            if (basePartName == baseObjectName)
-            {
-                if (log) Debug.Log($"{gameObject.name} is used in current step: {taskManager.CurrentStep.description}");
-                return manager.CurrentTaskRelevanceWeight * 0.5f;
-            }
-        }
-        return 0f;
+        HowDangerous = _dangerLevelToRise;
     }
 
-    public float AddDOIForFutureSteps(int howManyStepsAhead)
-    {
-        if (howManyStepsAhead <= 0) return 0f;
-        // Smooth exponential decay: 1 step → 0.70, 2 steps → 0.50, 3 steps → 0.35, 8 steps → 0.07
-        float distanceFactor = Mathf.Exp(-howManyStepsAhead * 0.35f);
+    // ─── Helpers ──────────────────────────────────────────────────────────────
 
-        if (log) Debug.Log($"{gameObject.name} used in {howManyStepsAhead} step(s) ahead (bonus: {distanceFactor})");
-        return manager.FutureTaskRelevanceWeight * distanceFactor;
-    }
-
-    private float CalculateStepDistanceFalloff(int stepDistance)
+    private string GetBaseItemName(string itemName)
     {
-        if (stepDistance == 0) return 1f;
-        return Mathf.Exp(-stepDistance * stepDistance / (2f * manager.gaussianSigma * manager.gaussianSigma));
+        if (string.IsNullOrEmpty(itemName)) return itemName;
+        return itemName.Split(' ')[0];
     }
 }
+
+
+public class ReadOnlyAttribute : PropertyAttribute { }
