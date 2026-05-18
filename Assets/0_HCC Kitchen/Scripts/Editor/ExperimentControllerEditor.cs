@@ -48,9 +48,13 @@ public class ExperimentControllerEditor : Editor
         
         SerializedProperty numTrialsProp = serializedObject.FindProperty("numTrials");
         SerializedProperty trialDelayProp = serializedObject.FindProperty("trialCompletionDelay");
-        
+        SerializedProperty leftHandRayInteractorProp = serializedObject.FindProperty("leftHandRayInteractor");
+        SerializedProperty rightHandRayInteractorProp = serializedObject.FindProperty("rightHandRayInteractor");
+
         EditorGUILayout.PropertyField(numTrialsProp);
         EditorGUILayout.PropertyField(trialDelayProp);
+        EditorGUILayout.PropertyField(leftHandRayInteractorProp);
+        EditorGUILayout.PropertyField(rightHandRayInteractorProp);
         
         EditorGUILayout.EndVertical();
 
@@ -66,8 +70,6 @@ public class ExperimentControllerEditor : Editor
         // Generate Trials — always available
         EditorGUI.BeginDisabledGroup(!Application.isPlaying);
         GUI.backgroundColor = new Color(1f, 0.76f, 0.03f);
-        if (GUILayout.Button("⚙   Generate Trials", GUILayout.Height(28)))
-            ctrl.GenerateTrials();
         GUI.backgroundColor = Color.white;
         EditorGUI.EndDisabledGroup();
 
@@ -77,7 +79,7 @@ public class ExperimentControllerEditor : Editor
         EditorGUI.BeginDisabledGroup(!Application.isPlaying);
         GUI.backgroundColor = new Color(0.3f, 0.9f, 0.4f);
         if (GUILayout.Button("▶   Start Experiment", GUILayout.Height(36)))
-            ctrl.StartExperiment();
+            ctrl.StartRandomTrials();
         GUI.backgroundColor = Color.white;
         EditorGUI.EndDisabledGroup();
 
@@ -88,6 +90,14 @@ public class ExperimentControllerEditor : Editor
         GUI.backgroundColor = new Color(1f, 0.6f, 0.2f);
         if (GUILayout.Button("⏭   Skip to Next Trial", GUILayout.Height(28)))
             ctrl.SkipToNextTrial();
+        GUI.backgroundColor = Color.white;
+        EditorGUI.EndDisabledGroup();
+
+        // Simulate Collect — debug only
+        EditorGUI.BeginDisabledGroup(!experimentActive);
+        GUI.backgroundColor = new Color(0.4f, 0.7f, 1f);
+        if (GUILayout.Button("🎯   Simulate Collect Next Item", GUILayout.Height(28)))
+            ctrl.SimulateCollectNext();
         GUI.backgroundColor = Color.white;
         EditorGUI.EndDisabledGroup();
 

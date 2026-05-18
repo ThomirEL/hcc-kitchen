@@ -43,6 +43,8 @@ public class KitchenHighlightManager : MonoBehaviour
         All,
         Sequential,
         Subset,
+
+        None
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -190,9 +192,9 @@ public void CreateTrialList(int permutationIndex = -1)
 
     targets = new List<ItemHighlight>();
 
-    List<ItemHighlight> canItems     = new List<ItemHighlight>();
-    List<ItemHighlight> dryItems     = new List<ItemHighlight>();
-    List<ItemHighlight> spiceItems   = new List<ItemHighlight>();
+    List<ItemHighlight> canItems   = new List<ItemHighlight>();
+    List<ItemHighlight> dryItems   = new List<ItemHighlight>();
+    List<ItemHighlight> spiceItems = new List<ItemHighlight>();
 
     for (int i = 0; i < canDefs.Length; i++)
         if (canDefs[i].groupIndex == canIndex && canDefs[i].canObject != null)
@@ -209,29 +211,77 @@ public void CreateTrialList(int permutationIndex = -1)
     List<ItemHighlight> fridgeItems  = AddRandomTaggedItems("fridge_item", 4);
     List<ItemHighlight> kitchenItems = AddRandomTaggedItems("kitchen_item", 4);
 
+    // ─────────────────────────────────────────────
+    // 🔥 DEBUG: PRINT RAW GROUPS BEFORE SHUFFLE
+    // ─────────────────────────────────────────────
+    Debug.Log("===== RAW GROUPS =====");
+    PrintList("CAN", canItems);
+    PrintList("DRY", dryItems);
+    PrintList("SPICE", spiceItems);
+    PrintList("FRIDGE", fridgeItems);
+    PrintList("KITCHEN", kitchenItems);
+
     List<List<ItemHighlight>> groupOrder = new List<List<ItemHighlight>>
         { canItems, dryItems, spiceItems, fridgeItems, kitchenItems };
+
     ShuffleList(groupOrder);
+
+    // ─────────────────────────────────────────────
+    // 🔥 DEBUG: PRINT ORDER AFTER SHUFFLE
+    // ─────────────────────────────────────────────
+    Debug.Log("===== SHUFFLED GROUP ORDER =====");
+
+    for (int i = 0; i < groupOrder.Count; i++)
+    {
+        PrintList($"GROUP {i}", groupOrder[i]);
+    }
 
     foreach (var group in groupOrder)
         targets.AddRange(group);
 
     _targetGroups = groupOrder
-        .Select(group => group.Select(item => item.gameObject.name).ToArray())
+        .Select(group => group.Select(item => item != null ? item.gameObject.name : "NULL").ToArray())
         .ToList();
 
     // ── Clear both pages before rebuilding ──────────────────────────
     _firstPageList.ClearList();
     _secondPageList.ClearList();
 
-
-
     var firstPageTargets  = groupOrder.Take(3).SelectMany(g => g).ToList();
     var secondPageTargets = groupOrder.Skip(3).SelectMany(g => g).ToList();
 
+    // ─────────────────────────────────────────────
+    // 🔥 DEBUG: PRINT FINAL PAGE SPLIT
+    // ─────────────────────────────────────────────
+    Debug.Log("===== FIRST PAGE =====");
+    PrintList("FIRST PAGE", firstPageTargets);
+
+    Debug.Log("===== SECOND PAGE =====");
+    PrintList("SECOND PAGE", secondPageTargets);
+
     StartCoroutine(_firstPageList.BuildList(firstPageTargets));
     StartCoroutine(_secondPageList.BuildList(secondPageTargets));
- 
+}
+
+private void PrintList(string label, List<ItemHighlight> list)
+{
+    if (list == null)
+    {
+        Debug.Log($"{label}: NULL LIST");
+        return;
+    }
+
+    string output = $"{label} ({list.Count} items): ";
+
+    for (int i = 0; i < list.Count; i++)
+    {
+        if (list[i] == null)
+            output += "[NULL], ";
+        else
+            output += list[i].gameObject.name + ", ";
+    }
+
+    Debug.Log(output);
 }
 
 /// <summary>
@@ -720,7 +770,10 @@ private string GetGroupLabel(
             case TargetingMode.Subset:
                 return GetSubsetTargetsByTag();
 
+            case TargetingMode.None:
+                return new List<ItemHighlight>();
             default:
+                Debug.LogWarning($"[Highlight] Unhandled targeting mode: {targetingMode}");
                 return new List<ItemHighlight>();
         }
     }

@@ -241,7 +241,7 @@ public IEnumerator CaptureAll(List<(GameObject prefab, string name)> items, Dict
         int index = _entries.Count - 1;
         _nameToIndex[spriteName] = index;
 
-        Debug.Log($"[ThumbnailGenerator] Captured '{spriteName}' → TMP index {index}");
+       // Debug.Log($"[ThumbnailGenerator] Captured '{spriteName}' → TMP index {index}");
     }
 
     private void RebuildSpriteAsset()

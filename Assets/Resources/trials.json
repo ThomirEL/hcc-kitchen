@@ -1,0 +1,24 @@
+{
+  "trials": [
+    { "id": 1, "sequence": ["a","a","b","d","c","b","c","a","d","c","d","b","a"] },
+    { "id": 2, "sequence": ["a","b","c","a","d","c","d","b","a","d","a","c","b"] },
+    { "id": 3, "sequence": ["a","c","d","b","a","d","a","c","b","a","b","d","c"] },
+    { "id": 4, "sequence": ["a","d","a","c","b","a","b","d","c","b","c","a","d"] },
+    { "id": 5, "sequence": ["a","a","b","d","c","b","c","a","d","c","d","b","a"] },
+    { "id": 6, "sequence": ["a","b","c","a","d","c","d","b","a","d","a","c","b"] },
+    { "id": 7, "sequence": ["a","c","d","b","a","d","a","c","b","a","b","d","c"] },
+    { "id": 8, "sequence": ["a","d","a","c","b","a","b","d","c","b","c","a","d"] },
+    { "id": 9, "sequence": ["a","b","c","a","d","a","b","d","c","d","a","c","b"] },
+    { "id": 10, "sequence": ["a","a","b","d","c","d","a","c","b","c","d","b","a"] },
+    { "id": 11, "sequence": ["a","d","a","c","b","c","d","b","a","b","c","a","d"] },
+    { "id": 12, "sequence": ["a","c","d","b","a","b","c","a","d","a","b","d","c"] },
+    { "id": 13, "sequence": ["a","a","b","d","c","b","c","a","d","c","d","b","a"] },
+    { "id": 14, "sequence": ["a","b","c","a","d","c","d","b","a","d","a","c","b"] },
+    { "id": 15, "sequence": ["a","c","d","b","a","d","a","c","b","a","b","d","c"] },
+    { "id": 16, "sequence": ["a","d","a","c","b","a","b","d","c","b","c","a","d"] },
+    { "id": 17, "sequence": ["a","b","c","a","d","a","b","d","c","d","a","c","b"] },
+    { "id": 18, "sequence": ["a","a","b","d","c","d","a","c","b","c","d","b","a"] },
+    { "id": 19, "sequence": ["a","d","a","c","b","c","d","b","a","b","c","a","d"] },
+    { "id": 20, "sequence": ["a","c","d","b","a","b","c","a","d","a","b","d","c"] }
+  ]
+}

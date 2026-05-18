@@ -35,35 +35,35 @@ public class RenderManager : MonoBehaviour
 
         if (CanManager.Instance != null)
         {
-            Debug.Log("[RenderManager] Calling CanManager.RenderAllCansNow()");
+    //        Debug.Log("[RenderManager] Calling CanManager.RenderAllCansNow()");
             CanManager.Instance.RenderAllCansNow();
             //CanManager.Instance.RenderBaseCans();
         }
         else
         {
-            Debug.LogWarning("[RenderManager] CanManager.Instance not found!");
+      //      Debug.LogWarning("[RenderManager] CanManager.Instance not found!");
         }
 
         if (DryGoodsManager.Instance != null)
         {
-            Debug.Log("[RenderManager] Calling DryGoodsManager.RenderAllDryGoodsNow()");
+//            Debug.Log("[RenderManager] Calling DryGoodsManager.RenderAllDryGoodsNow()");
             DryGoodsManager.Instance.RenderAllDryGoodsNow();
             //DryGoodsManager.Instance.RenderBaseCans();
         }
         else
         {
-            Debug.LogWarning("[RenderManager] DryGoodsManager.Instance not found!");
+  //          Debug.LogWarning("[RenderManager] DryGoodsManager.Instance not found!");
         }
 
         if (SpiceManager.Instance != null)
         {
-            Debug.Log("[RenderManager] Calling SpiceManager.RenderAllSpicesNow()");
+        //    Debug.Log("[RenderManager] Calling SpiceManager.RenderAllSpicesNow()");
             SpiceManager.Instance.RenderAllSpicesNow();
             //SpiceManager.Instance.RenderBaseCans();
         }
         else
         {
-            Debug.LogWarning("[RenderManager] SpiceManager.Instance not found!");
+            //            Debug.LogWarning("[RenderManager] SpiceManager.Instance not found!");
         }
 
         Debug.Log("[RenderManager] Base item rendering complete.");
