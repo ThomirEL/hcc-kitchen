@@ -422,7 +422,7 @@ public class ExperimentController : MonoBehaviour
 
         Trial trial = trials[_currentTrialIndex];
 
-        highlightManager.CreateTrialList(trial.permutationIndex);
+        highlightManager.CreateTrialList(_currentTrialIndex, Logging.Logger.participantID);
         highlightManager.SetCondition(trial.highlightType, trial.targetingMode);
         highlightManager.StartTrial();
 
