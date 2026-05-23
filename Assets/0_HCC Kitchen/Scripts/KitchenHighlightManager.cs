@@ -80,11 +80,18 @@ public class KitchenHighlightManager : MonoBehaviour
     [Header("Tags to include for trials")]
     private string[] tags; // Array of TagField references for validation (optional)
 
+    [Tooltip("If true, generates a Mermaid flowchart of item distributions for all 20 participants on Start.")]
+    public bool generateMermaidDebug = false;
+
     [SerializeField]
     private TextMeshProUGUI menuTextFirstPage; // For debugging: formatted string of current targets
 
     [SerializeField]
     private TextMeshProUGUI menuTextSecondPage; // For debugging: formatted string of current targets
+
+    // ── Add this field near your other debug fields ─────────────────────────
+    [Tooltip("Number of trials to simulate per participant in the Mermaid debug output.")]
+    [SerializeField] private int debugTrialCount = 4;
 
     // ─────────────────────────────────────────────────────────────────────
     // INTERNAL STATE
@@ -121,7 +128,137 @@ public class KitchenHighlightManager : MonoBehaviour
         // Highlights OFF by default — do not call StartTrial() here
         ClearAllHighlights();
         Logging.Logger.ParticipantIDSet.AddListener(OnParticipantIDSet);
+
+        if (generateMermaidDebug)
+        {
+            GenerateMermaidFile();
+        }
     }
+
+    // Add this overload — sits alongside the existing CreateTrialList(int, int)
+public void CreateTrialList()
+{
+    CreateTrialList(trialIndex: 0, participantID: 0);
+}
+
+    // ─────────────────────────────────────────────────────────────────────
+// MERMAID DEBUG GENERATION
+// ─────────────────────────────────────────────────────────────────────
+
+/// <summary>
+/// Generates a Mermaid flowchart showing item group distribution across
+/// all 20 participants × debugTrialCount trials, written to
+/// Application.persistentDataPath/Experiment Data/distribution_debug.md
+///
+/// Structure:  Participant → Trial → [Group 1 … Group 5 in order]
+/// Toggle via the generateMermaidDebug bool in the Inspector.
+/// </summary>
+private void GenerateMermaidFile()
+{
+    CanManager       canManager       = CanManager.Instance;
+    DryGoodsManager  dryGoodsManager  = DryGoodsManager.Instance;
+    SpiceManager     spiceManager     = SpiceManager.Instance;
+
+    if (canManager == null || dryGoodsManager == null || spiceManager == null)
+    {
+        Debug.LogError("[Mermaid] One or more item managers not found — aborting.");
+        return;
+    }
+
+    CanDefinition[]      canDefs   = canManager.cans;
+    DryGoodsDefinition[] dryDefs   = dryGoodsManager.dryGoods;
+    SpiceDefinition[]    spiceDefs = spiceManager.spices;
+
+    int maxCanGroup   = canDefs.Length   > 0 ? canDefs.Max(d => d.groupIndex)   : 0;
+    int maxDryGroup   = dryDefs.Length   > 0 ? dryDefs.Max(d => d.groupIndex)   : 0;
+    int maxSpiceGroup = spiceDefs.Length > 0 ? spiceDefs.Max(d => d.groupIndex) : 0;
+
+    // Mirror AddBalancedTaggedItems: sorted pools of item names only
+    List<string> fridgePool = GameObject.FindGameObjectsWithTag("fridge_item")
+        .OrderBy(o => o.name).Select(o => o.name).ToList();
+    List<string> kitchenPool = GameObject.FindGameObjectsWithTag("kitchen_item")
+        .OrderBy(o => o.name).Select(o => o.name).ToList();
+
+    // Category label templates (index 0-4 = Cans, Dry, Spices, Fridge, Kitchen)
+    const int FRIDGE_COUNT  = 4;
+    const int KITCHEN_COUNT = 4;
+
+    var sb = new System.Text.StringBuilder();
+    sb.AppendLine("flowchart TD");
+    sb.AppendLine();
+
+    for (int p = 1; p <= 20; p++)
+    {
+        int pid       = p - 1;                         // 0-indexed, matches CreateTrialList
+        string pNode  = $"P{p}";
+
+        sb.AppendLine($"  {pNode}([\"👤 P{p}\"])");
+
+        for (int t = 0; t < debugTrialCount; t++)
+        {
+            // ── Replicate CreateTrialList index logic ──────────────────
+            int canIdx   = (t + pid) % (maxCanGroup   + 1);
+            int dryIdx   = (t + pid) % (maxDryGroup   + 1);
+            int spiceIdx = (t + pid) % (maxSpiceGroup + 1);
+
+            List<string> fridgeItems  = MermaidBalancedSubset(fridgePool,  FRIDGE_COUNT,  t, pid);
+            List<string> kitchenItems = MermaidBalancedSubset(kitchenPool, KITCHEN_COUNT, t, pid);
+
+            // Base category labels before circular shift
+            string[] categoryLabels =
+            {
+                $"Cans grp{canIdx}",
+                $"Dry grp{dryIdx}",
+                $"Spices grp{spiceIdx}",
+                $"Fridge: {string.Join(" · ", fridgeItems)}",
+                $"Kitchen: {string.Join(" · ", kitchenItems)}"
+            };
+
+            // ── Replicate the circular-shift group order ───────────────
+            // balancedOrder[i] = groupOrder[(i + shift) % 5]
+            int shift = t % 5;
+
+            string tNode = $"P{p}T{t + 1}";
+            sb.AppendLine($"  {pNode} --> {tNode}[\"Trial {t + 1}\"]");
+
+            for (int slot = 0; slot < 5; slot++)
+            {
+                int    srcCategory = (slot + shift) % 5;
+                string gNode       = $"{tNode}G{slot + 1}";
+                string label       = categoryLabels[srcCategory];
+
+                sb.AppendLine($"  {tNode} --> {gNode}[\"{label}\"]");
+            }
+
+            sb.AppendLine();
+        }
+    }
+
+    // ── Write file ────────────────────────────────────────────────────
+    string dir      = Path.Combine(Application.persistentDataPath, "Experiment Data");
+    Directory.CreateDirectory(dir);
+    string filePath = Path.Combine(dir, "distribution_debug.md");
+    File.WriteAllText(filePath, sb.ToString());
+
+    Debug.Log($"[Mermaid] Distribution chart written to:\n{filePath}");
+}
+
+/// <summary>
+/// Pure read-only version of AddBalancedTaggedItems: returns item names
+/// without touching any scene GameObjects.
+/// </summary>
+private List<string> MermaidBalancedSubset(List<string> pool, int count, int trialIndex, int participantID)
+{
+    if (pool.Count == 0) return new List<string> { "(empty)" };
+
+    int startOffset = ((trialIndex * count) + participantID) % pool.Count;
+    var result      = new List<string>(count);
+
+    for (int i = 0; i < count; i++)
+        result.Add(pool[(startOffset + i) % pool.Count]);
+
+    return result;
+}
 
     private void OnParticipantIDSet()
     {
@@ -159,109 +296,106 @@ public class KitchenHighlightManager : MonoBehaviour
 [SerializeField] private ItemListUI _secondPageList;
 [SerializeField] private ThumbnailGenerator _thumbnailGenerator;
 
-public void CreateTrialList(int permutationIndex = -1)
-{
-    ClearMiniClones();
-
-    string trialPermutation = ReadPermutations(permutationIndex);
-
-    CanManager canManager           = CanManager.Instance;
-    DryGoodsManager dryGoodsManager = DryGoodsManager.Instance;
-    SpiceManager spiceManager       = SpiceManager.Instance;
-
-    if (canManager == null || dryGoodsManager == null || spiceManager == null)
+    public void CreateTrialList(int trialIndex, int participantID)
     {
-        Debug.LogError("[Highlight] Could not find one or more item managers.");
-        return;
+        ClearMiniClones();
+
+        CanManager canManager           = CanManager.Instance;
+        DryGoodsManager dryGoodsManager = DryGoodsManager.Instance;
+        SpiceManager spiceManager       = SpiceManager.Instance;
+
+        if (canManager == null || dryGoodsManager == null || spiceManager == null)
+        {
+            Debug.LogError("[Highlight] Could not find one or more item managers.");
+            return;
+        }
+
+        SpiceDefinition[]    spiceDefs = spiceManager.spices;
+        CanDefinition[]      canDefs   = canManager.cans;
+        DryGoodsDefinition[] dryDefs   = dryGoodsManager.dryGoods;
+
+        // Determine unique group indices available for each category to ensure balanced rotation
+        int maxCanGroup   = canDefs.Length > 0 ? canDefs.Max(d => d.groupIndex) : 0;
+        int maxDryGroup   = dryDefs.Length > 0 ? dryDefs.Max(d => d.groupIndex) : 0;
+        int maxSpiceGroup = spiceDefs.Length > 0 ? spiceDefs.Max(d => d.groupIndex) : 0;
+
+        int canIndex   = (trialIndex + participantID) % (maxCanGroup + 1);
+        int dryIndex   = (trialIndex + participantID) % (maxDryGroup + 1);
+        int spiceIndex = (trialIndex + participantID) % (maxSpiceGroup + 1);
+
+        targets = new List<ItemHighlight>();
+
+        List<ItemHighlight> canItems   = new List<ItemHighlight>();
+        List<ItemHighlight> dryItems   = new List<ItemHighlight>();
+        List<ItemHighlight> spiceItems = new List<ItemHighlight>();
+
+        for (int i = 0; i < canDefs.Length; i++)
+            if (canDefs[i].groupIndex == canIndex && canDefs[i].canObject != null)
+                canItems.Add(canDefs[i].canObject.GetComponent<ItemHighlight>());
+
+        for (int i = 0; i < dryDefs.Length; i++)
+            if (dryDefs[i].groupIndex == dryIndex && dryDefs[i].boxObject != null)
+                dryItems.Add(dryDefs[i].boxObject.GetComponent<ItemHighlight>());
+
+        for (int i = 0; i < spiceDefs.Length; i++)
+            if (spiceDefs[i].groupIndex == spiceIndex && spiceDefs[i].jarObject != null)
+                spiceItems.Add(spiceDefs[i].jarObject.GetComponent<ItemHighlight>());
+
+        List<ItemHighlight> fridgeItems  = AddBalancedTaggedItems("fridge_item", 4, trialIndex, participantID);
+        List<ItemHighlight> kitchenItems = AddBalancedTaggedItems("kitchen_item", 4, trialIndex, participantID);
+
+        // ─────────────────────────────────────────────
+        // 🔥 DEBUG: PRINT RAW GROUPS
+        // ─────────────────────────────────────────────
+        Debug.Log($"[Highlight] Trial {trialIndex} | Participant {participantID}");
+        Debug.Log($"[Highlight] Groups: Can={canIndex}, Dry={dryIndex}, Spice={spiceIndex}");
+        PrintList("CAN", canItems);
+        PrintList("DRY", dryItems);
+        PrintList("SPICE", spiceItems);
+        PrintList("FRIDGE", fridgeItems);
+        PrintList("KITCHEN", kitchenItems);
+
+        List<List<ItemHighlight>> groupOrder = new List<List<ItemHighlight>>
+            { canItems, dryItems, spiceItems, fridgeItems, kitchenItems };
+
+        // Balanced Group Order: Circular shift by trial index
+        int shift = trialIndex % 5;
+        List<List<ItemHighlight>> balancedOrder = new List<List<ItemHighlight>>();
+        for (int i = 0; i < groupOrder.Count; i++)
+        {
+            balancedOrder.Add(groupOrder[(i + shift) % groupOrder.Count]);
+        }
+        groupOrder = balancedOrder;
+
+        Debug.Log("===== BALANCED GROUP ORDER =====");
+        for (int i = 0; i < groupOrder.Count; i++)
+        {
+            PrintList($"GROUP {i}", groupOrder[i]);
+        }
+
+        foreach (var group in groupOrder)
+            targets.AddRange(group);
+
+        _targetGroups = groupOrder
+            .Select(group => group.Select(item => item != null ? item.gameObject.name : "NULL").ToArray())
+            .ToList();
+
+        // ── Clear both pages before rebuilding ──────────────────────────
+        _firstPageList.ClearList();
+        _secondPageList.ClearList();
+
+        var firstPageTargets  = groupOrder.Take(3).SelectMany(g => g).ToList();
+        var secondPageTargets = groupOrder.Skip(3).SelectMany(g => g).ToList();
+
+        Debug.Log("===== FIRST PAGE =====");
+        PrintList("FIRST PAGE", firstPageTargets);
+
+        Debug.Log("===== SECOND PAGE =====");
+        PrintList("SECOND PAGE", secondPageTargets);
+
+        StartCoroutine(_firstPageList.BuildList(firstPageTargets));
+        StartCoroutine(_secondPageList.BuildList(secondPageTargets));
     }
-
-    SpiceDefinition[]    spiceDefs = spiceManager.spices;
-    CanDefinition[]      canDefs   = canManager.cans;
-    DryGoodsDefinition[] dryDefs   = dryGoodsManager.dryGoods;
-
-    string[] indices = trialPermutation.Split(',');
-    if (indices.Length != 3)
-    {
-        Debug.LogError($"[Highlight] Invalid permutation format: {trialPermutation}");
-        return;
-    }
-
-    int canIndex   = int.Parse(indices[0]);
-    int dryIndex   = int.Parse(indices[1]);
-    int spiceIndex = int.Parse(indices[2]);
-
-    targets = new List<ItemHighlight>();
-
-    List<ItemHighlight> canItems   = new List<ItemHighlight>();
-    List<ItemHighlight> dryItems   = new List<ItemHighlight>();
-    List<ItemHighlight> spiceItems = new List<ItemHighlight>();
-
-    for (int i = 0; i < canDefs.Length; i++)
-        if (canDefs[i].groupIndex == canIndex && canDefs[i].canObject != null)
-            canItems.Add(canDefs[i].canObject.GetComponent<ItemHighlight>());
-
-    for (int i = 0; i < dryDefs.Length; i++)
-        if (dryDefs[i].groupIndex == dryIndex && dryDefs[i].boxObject != null)
-            dryItems.Add(dryDefs[i].boxObject.GetComponent<ItemHighlight>());
-
-    for (int i = 0; i < spiceDefs.Length; i++)
-        if (spiceDefs[i].groupIndex == spiceIndex && spiceDefs[i].jarObject != null)
-            spiceItems.Add(spiceDefs[i].jarObject.GetComponent<ItemHighlight>());
-
-    List<ItemHighlight> fridgeItems  = AddRandomTaggedItems("fridge_item", 4);
-    List<ItemHighlight> kitchenItems = AddRandomTaggedItems("kitchen_item", 4);
-
-    // ─────────────────────────────────────────────
-    // 🔥 DEBUG: PRINT RAW GROUPS BEFORE SHUFFLE
-    // ─────────────────────────────────────────────
-    Debug.Log("===== RAW GROUPS =====");
-    PrintList("CAN", canItems);
-    PrintList("DRY", dryItems);
-    PrintList("SPICE", spiceItems);
-    PrintList("FRIDGE", fridgeItems);
-    PrintList("KITCHEN", kitchenItems);
-
-    List<List<ItemHighlight>> groupOrder = new List<List<ItemHighlight>>
-        { canItems, dryItems, spiceItems, fridgeItems, kitchenItems };
-
-    ShuffleList(groupOrder);
-
-    // ─────────────────────────────────────────────
-    // 🔥 DEBUG: PRINT ORDER AFTER SHUFFLE
-    // ─────────────────────────────────────────────
-    Debug.Log("===== SHUFFLED GROUP ORDER =====");
-
-    for (int i = 0; i < groupOrder.Count; i++)
-    {
-        PrintList($"GROUP {i}", groupOrder[i]);
-    }
-
-    foreach (var group in groupOrder)
-        targets.AddRange(group);
-
-    _targetGroups = groupOrder
-        .Select(group => group.Select(item => item != null ? item.gameObject.name : "NULL").ToArray())
-        .ToList();
-
-    // ── Clear both pages before rebuilding ──────────────────────────
-    _firstPageList.ClearList();
-    _secondPageList.ClearList();
-
-    var firstPageTargets  = groupOrder.Take(3).SelectMany(g => g).ToList();
-    var secondPageTargets = groupOrder.Skip(3).SelectMany(g => g).ToList();
-
-    // ─────────────────────────────────────────────
-    // 🔥 DEBUG: PRINT FINAL PAGE SPLIT
-    // ─────────────────────────────────────────────
-    Debug.Log("===== FIRST PAGE =====");
-    PrintList("FIRST PAGE", firstPageTargets);
-
-    Debug.Log("===== SECOND PAGE =====");
-    PrintList("SECOND PAGE", secondPageTargets);
-
-    StartCoroutine(_firstPageList.BuildList(firstPageTargets));
-    StartCoroutine(_secondPageList.BuildList(secondPageTargets));
-}
 
 private void PrintList(string label, List<ItemHighlight> list)
 {
@@ -561,7 +695,7 @@ private string GetGroupLabel(
             menuTextSecondPage.text = FormatTargetListWithCollected(_targetGroups.Skip(3).Take(2).ToList());
     }
 
-    private List<ItemHighlight> AddRandomTaggedItems(string tag, int count)
+    private List<ItemHighlight> AddBalancedTaggedItems(string tag, int count, int trialIndex, int participantID)
     {
         GameObject[] allTagged = GameObject.FindGameObjectsWithTag(tag);
         if (allTagged.Length == 0)
@@ -570,23 +704,29 @@ private string GetGroupLabel(
             return new List<ItemHighlight>();
         }
 
-        List<GameObject> shuffled = new List<GameObject>(allTagged);
-        ShuffleList(shuffled);
-
-        int added = 0;
-        List<ItemHighlight> addedItems = new List<ItemHighlight>();
-        foreach (GameObject obj in shuffled)
+        // Sort by name to ensure consistent indexing across all trials/participants
+        List<GameObject> sortedItems = allTagged.OrderBy(o => o.name).ToList();
+        List<ItemHighlight> pool = new List<ItemHighlight>();
+        foreach (var obj in sortedItems)
         {
-            if (added >= count) break;
             ItemHighlight ih = obj.GetComponent<ItemHighlight>();
-            if (ih != null && !targets.Contains(ih))
-            {
-                addedItems.Add(ih);
-                added++;
-            }
+            if (ih != null) pool.Add(ih);
         }
 
-        return addedItems;
+        if (pool.Count == 0) return new List<ItemHighlight>();
+
+        List<ItemHighlight> selected = new List<ItemHighlight>();
+        int poolSize = pool.Count;
+
+        // Deterministic start point based on trial index and participant ID
+        int startOffset = ((trialIndex * count) + participantID) % poolSize;
+
+        for (int i = 0; i < count; i++)
+        {
+            selected.Add(pool[(startOffset + i) % poolSize]);
+        }
+
+        return selected;
     }
 
     private void ShuffleList<T>(List<T> list)
