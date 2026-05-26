@@ -9,6 +9,9 @@ using UnityEngine.XR.Interaction.Toolkit;
 /// SETUP: Add this component to each kitchen item. It will automatically
 /// find the existing XRSimpleInteractable — do NOT add a second one manually.
 ///
+/// Outline material: place your "ItemHighlight_Outline.mat" inside Assets/Resources/.
+/// The script loads it automatically — no per-item assignment needed.
+///
 /// Attach to: each kitchen item GameObject
 /// </summary>
 
@@ -16,11 +19,8 @@ using UnityEngine.XR.Interaction.Toolkit;
 [RequireComponent(typeof(Rigidbody))]
 public class ItemHighlight : MonoBehaviour
 {
-
-    
-    [Header("Does collecting it make it dissapear?")]
+    [Header("Does collecting it make it disappear?")]
     public bool disappearOnCollect = true;
-
 
     [Header("Appearance")]
     [Tooltip("Colour used for the ring and arrow highlights.")]
@@ -35,13 +35,24 @@ public class ItemHighlight : MonoBehaviour
     [Tooltip("Gap between arrow tip and top of object in metres.")]
     public float arrowGap = 0.04f;
 
+    // ── Outline material ──────────────────────────────────────────────────
+    // Loaded once from Resources/, shared across every ItemHighlight instance.
+    // We never modify it — we just add/remove it from renderer material arrays.
+    private static Material s_outlineMaterial;
+
+    // Per-renderer original material arrays, stored so we can restore them
+    // cleanly when the outline is removed (avoids stale extra slots).
+    private System.Collections.Generic.Dictionary<Renderer, Material[]> _originalMats;
+
+    private bool _outlineActive = false;
+
     // ── Visuals ───────────────────────────────────────────────────────────
-    private GameObject        _ringObj;
-    private GameObject        _arrowObj;
+    private GameObject _ringObj;
+    private GameObject _arrowObj;
 
     // ── State ─────────────────────────────────────────────────────────────
-    private bool _ringActive    = false;
-    private bool _arrowActive   = false;
+    private bool _ringActive  = false;
+    private bool _arrowActive = false;
 
     // ── References ────────────────────────────────────────────────────────
     private Transform               _playerCam;
@@ -53,8 +64,19 @@ public class ItemHighlight : MonoBehaviour
 
     private void Awake()
     {
-        _playerCam = Camera.main != null ? Camera.main.transform : null;
-        _manager   = FindAnyObjectByType<KitchenHighlightManager>();
+        _playerCam    = Camera.main != null ? Camera.main.transform : null;
+        _manager      = FindAnyObjectByType<KitchenHighlightManager>();
+        _originalMats = new System.Collections.Generic.Dictionary<Renderer, Material[]>();
+
+        // Load the shared outline material once — subsequent instances reuse it
+        if (s_outlineMaterial == null)
+        {
+            s_outlineMaterial = Resources.Load<Material>("ItemHighlight_Outline");
+            if (s_outlineMaterial == null)
+                Debug.LogError("[ItemHighlight] Could not find 'ItemHighlight_Outline.mat' " +
+                               "in any Resources/ folder. Make sure the file is at " +
+                               "Assets/Resources/ItemHighlight_Outline.mat");
+        }
     }
 
     private void Start()
@@ -68,20 +90,12 @@ public class ItemHighlight : MonoBehaviour
 
     private void OnEnable()
     {
-        // Find existing XRSimpleInteractable — do not add a new one
-        // Using GetComponentInChildren in case interactable is on a child (handle etc.)
         var interactable = GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable>();
         if (interactable != null)
-        {
             interactable.selectEntered.AddListener(OnGrabbed);
-            //Debug.Log($"[ItemHighlight] Hooked grab on: {gameObject.name}");
-        }
         else
-        {
             Debug.LogWarning($"[ItemHighlight] No XRSimpleInteractable found on " +
-                             $"{gameObject.name} or its children. Grab collection " +
-                             $"will not work for this item.");
-        }
+                             $"{gameObject.name} or its children. Grab collection will not work.");
     }
 
     private void OnDisable()
@@ -93,7 +107,6 @@ public class ItemHighlight : MonoBehaviour
 
     private void LateUpdate()
     {
-        // Ring: re-position and billboard every frame in case object moves
         if (_ringActive && _playerCam != null && _ringObj != null)
         {
             PositionRing();
@@ -102,7 +115,6 @@ public class ItemHighlight : MonoBehaviour
                 _ringObj.transform.rotation = Quaternion.LookRotation(dir);
         }
 
-        // Arrow re-positions every frame in case object moves
         if (_arrowActive && _arrowObj != null)
             PositionArrow();
     }
@@ -115,8 +127,7 @@ public class ItemHighlight : MonoBehaviour
     {
         if (_manager == null)
         {
-            Debug.LogWarning($"[ItemHighlight] {gameObject.name} grabbed but " +
-                             "KitchenHighlightManager not found.");
+            Debug.LogWarning($"[ItemHighlight] {gameObject.name} grabbed but KitchenHighlightManager not found.");
             return;
         }
 
@@ -139,16 +150,63 @@ public class ItemHighlight : MonoBehaviour
         _arrowActive = on;
         if (_arrowObj != null)
         {
-            PositionArrow(); // position before activating to avoid one-frame wrong pos
+            PositionArrow();
             _arrowObj.SetActive(on);
         }
     }
 
+    /// <summary>
+    /// Adds or removes the outline material on every Renderer in this object's
+    /// hierarchy. Uses add/remove (not width=0) so non-highlighted items pay
+    /// zero GPU cost — no shader passes run at all when the outline is off.
+    /// </summary>
+    public void SetOutline(bool on)
+    {
+        if (_outlineActive == on) return;   // no-op if state unchanged
+        if (s_outlineMaterial == null) return;
+
+        _outlineActive = on;
+
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+
+        foreach (Renderer rend in renderers)
+        {
+            // Skip the ring and arrow GameObjects we created ourselves
+            if (rend.gameObject == _ringObj || rend.gameObject == _arrowObj) continue;
+
+            if (on)
+            {
+                // Store original array so we can restore it exactly later
+                Material[] original = rend.sharedMaterials;
+                _originalMats[rend] = original;
+
+                Material[] withOutline = new Material[original.Length + 1];
+                original.CopyTo(withOutline, 0);
+                withOutline[original.Length] = s_outlineMaterial;
+                rend.sharedMaterials = withOutline;
+            }
+            else
+            {
+                // Restore the original array if we have it; otherwise strip manually
+                if (_originalMats.TryGetValue(rend, out Material[] original))
+                {
+                    if (rend != null) rend.sharedMaterials = original;
+                    _originalMats.Remove(rend);
+                }
+                else
+                {
+                    // Fallback: strip the outline material by reference
+                    RemoveOutlineMaterialFrom(rend);
+                }
+            }
+        }
+    }
 
     public void ClearAll()
     {
         SetCircle(false);
         SetArrow(false);
+        SetOutline(false);
     }
 
     public void SetColour(Color col)
@@ -164,7 +222,7 @@ public class ItemHighlight : MonoBehaviour
             var mr = _arrowObj.GetComponent<Renderer>();
             if (mr != null) mr.material.color = col;
         }
-        // Outline stays white
+        // Outline colour is controlled by the shared material in the Inspector
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -174,24 +232,14 @@ public class ItemHighlight : MonoBehaviour
     private void BuildRing()
     {
         _ringObj = new GameObject($"{gameObject.name}_Ring");
-        
-        // Parent to scene root NOT to this transform — avoids inheriting
-        // the item's local scale which causes the ring to be skewed
         _ringObj.transform.SetParent(null);
+
         switch (gameObject.tag)
         {
-            case "spice_jar":
-                _ringObj.transform.localScale = new Vector3(0.7f,0.7f,0.7f);
-                break;
-            case "can_box":
-                _ringObj.transform.localScale = new Vector3(0.8f,0.8f,0.8f);
-                break;
-            case "dry_goods_box":
-                _ringObj.transform.localScale = new Vector3(0.9f,0.9f,0.9f);
-                break;
-            default:
-                _ringObj.transform.localScale = Vector3.one;
-                break;
+            case "spice_jar":    _ringObj.transform.localScale = new Vector3(0.7f, 0.7f, 0.7f); break;
+            case "can_box":      _ringObj.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f); break;
+            case "dry_goods_box":_ringObj.transform.localScale = new Vector3(0.9f, 0.9f, 0.9f); break;
+            default:             _ringObj.transform.localScale = Vector3.one; break;
         }
 
         Bounds b = ComputeWorldBounds();
@@ -214,7 +262,7 @@ public class ItemHighlight : MonoBehaviour
     private Mesh BuildTorusMesh(float ringRadius, float tubeRadius,
                                  int ringSegments, int tubeSegments)
     {
-        Mesh mesh     = new Mesh { name = "TorusRing" };
+        Mesh mesh      = new Mesh { name = "TorusRing" };
         int  vertCount = ringSegments * tubeSegments;
         var  verts     = new Vector3[vertCount];
         var  normals   = new Vector3[vertCount];
@@ -223,9 +271,9 @@ public class ItemHighlight : MonoBehaviour
 
         for (int i = 0; i < ringSegments; i++)
         {
-            float ringAngle = 2f * Mathf.PI * i / ringSegments;
-            float cosR = Mathf.Cos(ringAngle);
-            float sinR = Mathf.Sin(ringAngle);
+            float   ringAngle  = 2f * Mathf.PI * i / ringSegments;
+            float   cosR       = Mathf.Cos(ringAngle);
+            float   sinR       = Mathf.Sin(ringAngle);
             Vector3 ringCentre = new Vector3(cosR * ringRadius, sinR * ringRadius, 0f);
 
             for (int j = 0; j < tubeSegments; j++)
@@ -248,15 +296,17 @@ public class ItemHighlight : MonoBehaviour
             for (int j = 0; j < tubeSegments; j++)
             {
                 int nj = (j + 1) % tubeSegments;
-                int a = i * tubeSegments + j,   b = ni * tubeSegments + j;
-                int c = ni * tubeSegments + nj, d = i  * tubeSegments + nj;
+                int a  = i * tubeSegments + j,  b  = ni * tubeSegments + j;
+                int c  = ni * tubeSegments + nj, d  = i  * tubeSegments + nj;
                 tris[ti++] = a; tris[ti++] = b; tris[ti++] = c;
                 tris[ti++] = a; tris[ti++] = c; tris[ti++] = d;
             }
         }
 
-        mesh.vertices = verts; mesh.normals = normals;
-        mesh.uv = uvs;         mesh.triangles = tris;
+        mesh.vertices  = verts;
+        mesh.normals   = normals;
+        mesh.uv        = uvs;
+        mesh.triangles = tris;
         return mesh;
     }
 
@@ -267,9 +317,6 @@ public class ItemHighlight : MonoBehaviour
     private void BuildArrow()
     {
         _arrowObj = new GameObject($"{gameObject.name}_Arrow");
-
-        // Parent to scene root NOT to this transform — avoids inheriting
-        // the item's local scale which causes the arrow to fly upward
         _arrowObj.transform.SetParent(null);
         _arrowObj.transform.localScale = Vector3.one;
 
@@ -294,8 +341,8 @@ public class ItemHighlight : MonoBehaviour
     private void PositionArrow()
     {
         if (_arrowObj == null) return;
-        Bounds  b         = ComputeWorldBounds();
-        float   tipWorldY = b.max.y + arrowGap;
+        Bounds b        = ComputeWorldBounds();
+        float tipWorldY = b.max.y + arrowGap;
         _arrowObj.transform.position = new Vector3(b.center.x, tipWorldY, b.center.z);
         _arrowObj.transform.rotation = Quaternion.identity;
     }
@@ -336,16 +383,11 @@ public class ItemHighlight : MonoBehaviour
             5,13,10,5,10,4,
             6,12,13,6,13,5,
         };
-        mesh.vertices = v; mesh.triangles = t;
+        mesh.vertices  = v;
+        mesh.triangles = t;
         mesh.RecalculateNormals();
         return mesh;
     }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // OUTLINE SETUP
-    // ─────────────────────────────────────────────────────────────────────
-
-  
 
     // ─────────────────────────────────────────────────────────────────────
     // CLEANUP
@@ -353,6 +395,10 @@ public class ItemHighlight : MonoBehaviour
 
     private void OnDestroy()
     {
+        // Restore all renderers to their original materials before we die
+        SetOutline(false);
+
+        if (_ringObj  != null) Destroy(_ringObj);
         if (_arrowObj != null) Destroy(_arrowObj);
     }
 
@@ -379,13 +425,33 @@ public class ItemHighlight : MonoBehaviour
         return new Bounds(transform.position, Vector3.one * 0.15f);
     }
 
-     private Material BuildUnlitMaterial(Color col)
+    private Material BuildUnlitMaterial(Color col)
     {
         Shader   s   = Shader.Find("Custom/OverlayUnlit")
                     ?? Shader.Find("Universal Render Pipeline/Unlit")
                     ?? Shader.Find("Unlit/Color");
         Material mat = new Material(s) { color = col };
-        
         return mat;
+    }
+
+    /// <summary>
+    /// Fallback: removes the outline material by reference without a stored original.
+    /// Creates a new array with the outline slot filtered out.
+    /// </summary>
+    private void RemoveOutlineMaterialFrom(Renderer rend)
+    {
+        if (rend == null || s_outlineMaterial == null) return;
+
+        var current = rend.sharedMaterials;
+        int newLen  = 0;
+        foreach (var m in current) if (m != s_outlineMaterial) newLen++;
+        if (newLen == current.Length) return; // wasn't there
+
+        var cleaned = new Material[newLen];
+        int idx = 0;
+        foreach (var m in current)
+            if (m != s_outlineMaterial) cleaned[idx++] = m;
+
+        rend.sharedMaterials = cleaned;
     }
 }

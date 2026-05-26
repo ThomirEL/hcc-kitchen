@@ -32,10 +32,12 @@ public class KitchenHighlightManager : MonoBehaviour
     // ENUMS
     // ─────────────────────────────────────────────────────────────────────
 
+    // 1. Add Outline to the enum
     public enum HighlightType
     {
         Circle,
         Arrow,
+        Outline,   // ← add this
     }
 
     public enum TargetingMode
@@ -960,12 +962,14 @@ private string GetGroupLabel(
         return sameTag;
     }
 
+    // 2. Handle it in ApplyHighlightType
     private void ApplyHighlightType(ItemHighlight item, HighlightType type)
     {
         switch (type)
         {
-            case HighlightType.Circle: item.SetCircle(true); break;
-            case HighlightType.Arrow:  item.SetArrow(true);  break;
+            case HighlightType.Circle:  item.SetCircle(true);  break;
+            case HighlightType.Arrow:   item.SetArrow(true);   break;
+            case HighlightType.Outline: item.SetOutline(true); break;  // ← add this
         }
     }
 

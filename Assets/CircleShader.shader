@@ -8,7 +8,7 @@ Shader "Custom/CircleShader"
 
     SubShader
     {
-        Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" }
+        Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" "Queue"="Overlay" }
 
         Pass
         {

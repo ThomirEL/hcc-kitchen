@@ -195,7 +195,7 @@ public class ExperimentController : MonoBehaviour
         {
             Trial trial = new Trial
             {
-                highlightType    = (KitchenHighlightManager.HighlightType)Random.Range(0, 2),
+                highlightType    = (KitchenHighlightManager.HighlightType)Random.Range(0, 3),
                 targetingMode    = (KitchenHighlightManager.TargetingMode)Random.Range(0, 3),
                 permutationIndex = Random.Range(0, 100)
             };
@@ -239,7 +239,7 @@ public class ExperimentController : MonoBehaviour
         return;
     }
 
-    var highlightType = KitchenHighlightManager.HighlightType.Circle;
+    var highlightType = KitchenHighlightManager.HighlightType.Outline;
 
     foreach (string letter in trial.sequence)
     {

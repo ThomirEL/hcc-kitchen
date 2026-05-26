@@ -874,8 +874,23 @@ MonoBehaviour:
   m_Name: Android
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRSettings
   features:
+  - {fileID: 6258446782595245722}
+  - {fileID: 5524362967675672131}
+  - {fileID: -7651416479507282868}
+  - {fileID: -5922043845681816766}
+  - {fileID: 1365409942492417602}
+  - {fileID: 5518114784160448821}
+  - {fileID: 7305446758275078254}
+  - {fileID: -4842648109303035720}
+  - {fileID: 189777676735503462}
+  - {fileID: -8274266048684946550}
+  - {fileID: -1399407536933085169}
+  - {fileID: 930715830987951269}
+  - {fileID: -8765803740436744092}
+  - {fileID: -6179890429220844917}
   - {fileID: -5596900606646906481}
   - {fileID: -3737613884271737892}
+  - {fileID: -6351075122414668726}
   - {fileID: 7689054043934540485}
   - {fileID: -2779855174099717867}
   - {fileID: 6161852564657521242}
@@ -883,6 +898,7 @@ MonoBehaviour:
   - {fileID: -8274943292723078154}
   - {fileID: -6007670653405106910}
   - {fileID: -6153926954159827149}
+  - {fileID: -37177605057498335}
   - {fileID: 4417089805343221369}
   - {fileID: 8961424793486132491}
   - {fileID: -4557348900015866024}
@@ -893,6 +909,7 @@ MonoBehaviour:
   - {fileID: 4334825393792490037}
   - {fileID: -6292178257943249740}
   - {fileID: -1473186844405157361}
+  - {fileID: 5752230526037166546}
   customLoaderName: 
   m_renderMode: 0
   m_latencyOptimization: 1
@@ -1481,6 +1498,10 @@ MonoBehaviour:
   m_Name: Standalone
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRSettings
   features:
+  - {fileID: -6113090458651475711}
+  - {fileID: 5217695599730570283}
+  - {fileID: 4002062557263177400}
+  - {fileID: -6385951792224414782}
   - {fileID: -742857619826034226}
   - {fileID: 2745466542709990978}
   - {fileID: 4068981722158951743}
@@ -1490,6 +1511,7 @@ MonoBehaviour:
   - {fileID: 3045147375683654888}
   - {fileID: -5044692254540789988}
   - {fileID: -2633054849472937123}
+  - {fileID: 4390296199836617232}
   - {fileID: 1349428498658380041}
   - {fileID: -8319007045358165975}
   - {fileID: 2524990620806801656}
@@ -1500,6 +1522,7 @@ MonoBehaviour:
   - {fileID: 6091274234017536183}
   - {fileID: -8908451693568229214}
   - {fileID: -853318558273931536}
+  - {fileID: -6430054872996562444}
   customLoaderName: 
   m_renderMode: 0
   m_latencyOptimization: 0
